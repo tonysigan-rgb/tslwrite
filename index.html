@@ -259,6 +259,12 @@ function showError(msg) {
   el.textContent = msg; el.classList.add('show');
   document.getElementById('success-msg').classList.remove('show');
 }
+
+if (new URLSearchParams(window.location.search).get('reason') === 'signin-required') {
+  showError('Please sign in or create an account to access the scriptwriter.');
+  window.history.replaceState({}, document.title, window.location.pathname);
+}
+
 function showSuccess(msg) {
   const el = document.getElementById('success-msg');
   el.textContent = msg; el.classList.add('show');

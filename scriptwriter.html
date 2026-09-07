@@ -417,6 +417,48 @@ body:not(.focus-mode) .focus-exit{display:none}
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<style>
+/* Keep the app hidden until Firebase confirms that this visitor is signed in. */
+html.auth-pending body { visibility: hidden; }
+</style>
+<script>
+// This page is an authenticated route. Keep this config in sync with index.html.
+window.tslWriteFirebaseConfig = {
+  apiKey:            "AIzaSyAQKZ7_ocuATRPWf6ljC8U4K0rCQKo3Um0",
+  authDomain:        "tslwrite.firebaseapp.com",
+  projectId:         "tslwrite",
+  storageBucket:     "tslwrite.firebasestorage.app",
+  messagingSenderId: "395801581699",
+  appId:             "1:395801581699:web:ef82500d81fe379cffa3b6"
+};
+
+(function guardScriptwriterRoute() {
+  document.documentElement.classList.add('auth-pending');
+
+  window.redirectToSignIn = function redirectToSignIn() {
+    const loginUrl = new URL('index.html', window.location.href);
+    loginUrl.searchParams.set('reason', 'signin-required');
+    window.location.replace(loginUrl.href);
+  };
+
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(window.tslWriteFirebaseConfig);
+    firebase.auth().onAuthStateChanged(
+      user => {
+        if (!user) return window.redirectToSignIn();
+        document.documentElement.classList.remove('auth-pending');
+      },
+      error => {
+        console.warn('Firebase authentication check failed:', error);
+        window.redirectToSignIn();
+      }
+    );
+  } catch (error) {
+    console.warn('Firebase authentication check failed:', error);
+    window.redirectToSignIn();
+  }
+}());
+</script>
 
 </head>
 <body>
@@ -770,20 +812,7 @@ body:not(.focus-mode) .focus-exit{display:none}
 </div>
 
 <script>
-// ══════════════════════════════════════════════════════
-//  ⚠️  REPLACE THIS WITH YOUR FIREBASE PROJECT CONFIG
-//  Go to: https://console.firebase.google.com
-//  → Your project → Project Settings → Your apps → Config
-// ══════════════════════════════════════════════════════
-const firebaseConfig = {
-  apiKey:            "AIzaSyAQKZ7_ocuATRPWf6ljC8U4K0rCQKo3Um0",
-  authDomain:        "tslwrite.firebaseapp.com",
-  projectId:         "tslwrite",
-  storageBucket:     "tslwrite.firebasestorage.app",
-  messagingSenderId: "395801581699",
-  appId:             "1:395801581699:web:ef82500d81fe379cffa3b6"
-};
-// ══════════════════════════════════════════════════════
+const firebaseConfig = window.tslWriteFirebaseConfig;
 
 let _fbAuth = null, _fbDb = null, _currentUser = null;
 
@@ -796,11 +825,13 @@ function initFirebase() {
 
     _fbAuth.onAuthStateChanged(user => {
       _currentUser = user;
+      if (!user) return window.redirectToSignIn();
       updateUserBar(user);
-      if (user) loadProjectsFromFirestore();
+      loadProjectsFromFirestore();
     });
   } catch(e) {
     console.warn('Firebase init failed:', e);
+    window.redirectToSignIn();
   }
 }
 
