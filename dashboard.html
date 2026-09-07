@@ -44,5 +44,153 @@ function showToast(message){const toast=document.getElementById('toast');toast.t
 async function loadProjects(){projects=getLocalProjects();displayProjects();try{const snapshot=await db.collection('users').doc(currentUser.uid).collection('projects').get();const all=new Map(projects.map(p=>[p.id,p]));snapshot.docs.forEach(doc=>all.set(doc.id,{...all.get(doc.id),...doc.data(),id:doc.id}));projects=[...all.values()].sort((a,b)=>(b.updated||0)-(a.updated||0));displayProjects()}catch(error){console.warn('Could not load cloud projects:',error)}}
 try{firebase.initializeApp(firebaseConfig);auth=firebase.auth();db=firebase.firestore();auth.onAuthStateChanged(user=>{if(!user){window.location.replace('index.html?reason=signin-required');return}currentUser=user;const name=user.displayName||user.email||'Your account';document.getElementById('user-name').textContent=name;document.getElementById('avatar').textContent=name.trim().charAt(0).toUpperCase()||'T';document.body.classList.remove('auth-pending');loadProjects()})}catch(error){console.warn('Firebase authentication failed:',error);window.location.replace('index.html?reason=signin-required')}setMarket('services');
 </script>
+<style>
+.project-options{margin-left:auto;position:relative}.project-options-btn{height:31px;width:31px;border:1px solid #cfd9de;background:#fff;border-radius:6px;color:#4b626e;font-size:19px;line-height:1;cursor:pointer}.project-options-btn:hover{border-color:#91b600;color:#506800}.project-actions .project-options-btn{margin-left:auto}.option-list{display:grid;gap:8px;margin-top:18px}.option-action{border:1px solid var(--line);border-radius:8px;background:#fff;padding:12px;text-align:left;color:#314753;font:inherit;font-size:13px;font-weight:800;cursor:pointer}.option-action:hover{border-color:var(--lime);background:#fbfdef}.option-action.danger{color:#b83c30}.option-action.danger:hover{border-color:#ef9a90;background:#fff6f5}.modal small{display:block;margin-top:3px;color:var(--muted);font-size:11px;font-weight:500}.setting-grid{display:grid;gap:12px}.setting-grid label{margin:0}.modal .project-meta{margin:0 0 16px}.settings-access{padding:11px 12px;background:#f3f6f7;border-radius:8px;color:#536771;font-size:12px;line-height:1.45}
+</style>
+<script>
+// Extend the project cards with management controls without changing the writer's data format.
+const renderDashboardProjects = displayProjects;
+displayProjects = function enhancedDisplayProjects() {
+  renderDashboardProjects();
+  document.querySelectorAll('#project-grid .project').forEach(card => {
+    const openButton = card.querySelector('button[onclick^="openWriter"]');
+    const match = openButton && openButton.getAttribute('onclick').match(/openWriter\('([^']+)'\)/);
+    if (!match) return;
+    const projectId = match[1];
+    const actions = card.querySelector('.project-actions');
+    if (!actions || actions.querySelector('.project-options-btn')) return;
+    const options = document.createElement('button');
+    options.className = 'project-options-btn';
+    options.type = 'button';
+    options.title = 'Project options';
+    options.setAttribute('aria-label', 'Project options');
+    options.textContent = '⋯';
+    options.onclick = () => openProjectOptions(projectId);
+    actions.appendChild(options);
+  });
+};
+
+function persistProjects() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('scriptwriter_v2') || '{}');
+    saved.projects = projects;
+    if (!projects.some(project => project.id === saved.currentProjectId)) {
+      saved.currentProjectId = projects[0]?.id || null;
+    }
+    localStorage.setItem('scriptwriter_v2', JSON.stringify(saved));
+  } catch (error) {
+    console.warn('Could not save project changes locally:', error);
+  }
+}
+
+async function syncProject(project) {
+  if (!db || !currentUser || !project) return;
+  try {
+    await db.collection('users').doc(currentUser.uid).collection('projects').doc(project.id).set({
+      ...project,
+      updated: Date.now(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, {merge: true});
+  } catch (error) {
+    console.warn('Could not sync project changes:', error);
+    showToast('Saved on this device. Cloud sync will retry later.');
+  }
+}
+
+function projectById(id) {
+  return projects.find(project => project.id === id);
+}
+
+function openProjectOptions(id) {
+  selectedProjectId = id;
+  const project = projectById(id);
+  if (!project) return;
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="modal-wrap show" id="project-options-modal" onclick="if(event.target===this)closeProjectOptions()">
+      <div class="modal">
+        <h2>${escapeHtml(project.title || 'Untitled Script')}</h2>
+        <p class="project-meta">Manage this project and its collaborators.</p>
+        <div class="option-list">
+          <button class="option-action" onclick="openProjectSettings('${project.id}')">Edit project details<small>Rename the script or change its format.</small></button>
+          <button class="option-action" onclick="openProjectSharing('${project.id}')">Sharing &amp; access<small>Invite collaborators as editors or read-only viewers.</small></button>
+          <button class="option-action danger" onclick="deleteDashboardProject('${project.id}')">Delete project<small>Permanently remove this script from your workspace.</small></button>
+        </div>
+        <div class="modal-actions"><button class="button outline" onclick="closeProjectOptions()">Close</button></div>
+      </div>
+    </div>`);
+}
+
+function closeProjectOptions() {
+  document.getElementById('project-options-modal')?.remove();
+}
+
+function openProjectSettings(id) {
+  const project = projectById(id);
+  if (!project) return;
+  closeProjectOptions();
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="modal-wrap show" id="project-settings-modal" onclick="if(event.target===this)closeProjectSettings()">
+      <div class="modal">
+        <h2>Project settings</h2>
+        <p>Update the details shown in your dashboard and writer.</p>
+        <div class="setting-grid">
+          <label>Project title<input id="settings-title" value="${escapeHtml(project.title || '')}" maxlength="100"></label>
+          <label>Format<select id="settings-format">
+            <option value="screenplay" ${project.format === 'screenplay' ? 'selected' : ''}>Screenplay (Film/TV)</option>
+            <option value="tv-pilot" ${project.format === 'tv-pilot' ? 'selected' : ''}>TV Pilot</option>
+            <option value="stage-play" ${project.format === 'stage-play' ? 'selected' : ''}>Stage Play</option>
+            <option value="short-film" ${project.format === 'short-film' ? 'selected' : ''}>Short Film</option>
+          </select></label>
+          <div class="settings-access">Use <strong>Sharing &amp; access</strong> to choose whether each collaborator can edit or only read the script.</div>
+        </div>
+        <div class="modal-actions"><button class="button outline" onclick="closeProjectSettings()">Cancel</button><button class="button primary" onclick="saveProjectSettings('${project.id}')">Save changes</button></div>
+      </div>
+    </div>`);
+  document.getElementById('settings-title').focus();
+}
+
+function closeProjectSettings() {
+  document.getElementById('project-settings-modal')?.remove();
+}
+
+async function saveProjectSettings(id) {
+  const project = projectById(id);
+  const title = document.getElementById('settings-title').value.trim();
+  if (!project || !title) return showToast('Give the project a title before saving.');
+  project.title = title;
+  project.format = document.getElementById('settings-format').value;
+  project.updated = Date.now();
+  persistProjects();
+  closeProjectSettings();
+  displayProjects();
+  await syncProject(project);
+  showToast('Project details saved.');
+}
+
+function openProjectSharing(id) {
+  selectedProjectId = id;
+  closeProjectOptions();
+  openShare();
+}
+
+async function deleteDashboardProject(id) {
+  const project = projectById(id);
+  if (!project || !confirm(`Delete “${project.title || 'Untitled Script'}”? This cannot be undone.`)) return;
+  projects = projects.filter(item => item.id !== id);
+  if (selectedProjectId === id) selectedProjectId = projects[0]?.id || null;
+  persistProjects();
+  closeProjectOptions();
+  displayProjects();
+  try {
+    if (db && currentUser) {
+      await db.collection('users').doc(currentUser.uid).collection('projects').doc(id).delete();
+    }
+    showToast('Project deleted.');
+  } catch (error) {
+    console.warn('Could not delete cloud project:', error);
+    showToast('Deleted on this device. Cloud deletion will retry later.');
+  }
+}
+</script>
 </body>
 </html>
