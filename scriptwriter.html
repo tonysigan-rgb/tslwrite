@@ -41,6 +41,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tbtn:hover{background:rgba(255,255,255,0.1);color:#fff}
 .tbtn.active{background:var(--accent);color:#fff}
 .tbtn.danger:hover{background:rgba(255,80,80,0.2);color:#ff8080}
+.file-menu{position:relative}
+.file-menu-list{display:none;position:absolute;top:calc(100% + 7px);left:0;z-index:1200;min-width:216px;padding:6px;background:#1e2d40;border:1px solid rgba(255,255,255,.14);border-radius:9px;box-shadow:0 14px 30px rgba(0,0,0,.32)}
+.file-menu.open .file-menu-list{display:block}
+.file-menu-item{width:100%;border:0;border-radius:6px;background:transparent;color:rgba(255,255,255,.84);padding:9px 10px;font:inherit;font-size:12px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:9px}
+.file-menu-item:hover,.file-menu-item.active{background:rgba(255,255,255,.1);color:#fff}
+.file-menu-item svg{width:15px;height:15px;flex-shrink:0}
+.file-menu-divider{height:1px;background:rgba(255,255,255,.12);margin:5px 4px}
+.file-menu-hint{margin-left:auto;color:rgba(255,255,255,.42);font-size:10px}
 .title-wrap{flex:1;display:flex;justify-content:center}
 .script-title-input{background:transparent;border:none;color:rgba(255,255,255,.9);font-size:14px;font-weight:700;text-align:center;padding:4px 10px;border-radius:6px;cursor:pointer;max-width:360px;width:100%}
 .script-title-input:focus{outline:none;background:rgba(255,255,255,.1);color:#fff}
@@ -490,44 +498,25 @@ window.tslWriteFirebaseConfig = {
   <span class="autosave-indicator" id="autosave-indicator">Saved</span>
   <div class="toolbar-sep"></div>
 
-  <button class="tbtn" onclick="openCoverPageDialog()" title="Edit cover page">
-    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 1h10v14H3z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M6 5h4M6 7.5h4M6 10h3" stroke="currentColor" stroke-width="1" fill="none"/><path d="M5 2.5h6" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
-    Cover Page
-  </button>
-  <button class="tbtn" onclick="exportPDF()" title="Export / Print">
-    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 1h6l3 3v10H3V1zm5 0v4h4"/><path d="M5 8h6M5 10.5h6M5 5.5h4" stroke="currentColor" stroke-width="1" fill="none"/></svg>
-    Export PDF
-  </button>
-  <button class="tbtn" onclick="toggleWatermark()" id="btn-watermark" title="Toggle DRAFT watermark on PDF">
-    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 12L7 3l3 5 2-3 4 7H2z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
-    Watermark
-  </button>
-  <button class="tbtn" onclick="exportTXT()" title="Export as plain text">TXT</button>
-  <button class="tbtn" onclick="openImportDialog()" title="Import script file">
-    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1v9M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 11v2a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-2" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round"/></svg>
-    Import
-  </button>
-
-  <button class="tbtn" onclick="exportFountain()" title="Export as .fountain">
-    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1L3 5h3v9h4V5h3z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
-    .fountain
-  </button>
-  <button class="tbtn" onclick="toggleFindReplace()" title="Find &amp; Replace (Ctrl+H)" id="btn-fnr">
-    <svg viewBox="0 0 16 16" fill="currentColor"><circle cx="6" cy="6" r="4" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M9 9l4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 5h3M12.5 3.5v3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-    Find
-  </button>
-  <button class="tbtn" onclick="toggleFocusMode()" title="Focus / Distraction-Free Mode (F11)" id="btn-focus">
-    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 5V2h3M12 2h3v3M15 11v3h-3M4 14H1v-3" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    Focus
-  </button>
-  <button class="tbtn" onclick="toggleTypewriterMode()" title="Typewriter scroll mode" id="btn-typewriter">
-    <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="10" width="14" height="2" rx="1"/><path d="M4 4h8v5H4z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M6 13v2M10 13v2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-    Typewriter
-  </button>
-  <button class="tbtn" onclick="exportFDX()" title="Export as Final Draft (.fdx)">
-    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 1h7l3 3v11H3V1zm6 0v4h4" fill="none" stroke="currentColor" stroke-width="1.2"/><text x="4" y="13" font-size="5" font-family="monospace" fill="currentColor">FDX</text></svg>
-    .fdx
-  </button>
+  <div class="file-menu" id="file-menu">
+    <button class="tbtn" type="button" onclick="toggleFileMenu(event)" aria-haspopup="true" aria-expanded="false" id="btn-file-menu">
+      File <span style="font-size:9px;opacity:.7">▾</span>
+    </button>
+    <div class="file-menu-list" role="menu" aria-label="File actions">
+      <button class="file-menu-item" onclick="openCoverPageDialog()" role="menuitem">▤ Cover Page</button>
+      <button class="file-menu-item" onclick="openImportDialog()" role="menuitem">⇩ Import script</button>
+      <div class="file-menu-divider"></div>
+      <button class="file-menu-item" onclick="exportPDF()" role="menuitem">▣ Export PDF <span class="file-menu-hint">Ctrl+P</span></button>
+      <button class="file-menu-item" onclick="exportTXT()" role="menuitem">TXT Export plain text</button>
+      <button class="file-menu-item" onclick="exportFountain()" role="menuitem">⇧ Export .fountain</button>
+      <button class="file-menu-item" onclick="exportFDX()" role="menuitem">FDX Export Final Draft</button>
+      <div class="file-menu-divider"></div>
+      <button class="file-menu-item" onclick="toggleWatermark()" id="btn-watermark" role="menuitem">△ Draft watermark</button>
+      <button class="file-menu-item" onclick="toggleFindReplace()" id="btn-fnr" role="menuitem">⌕ Find &amp; Replace <span class="file-menu-hint">Ctrl+H</span></button>
+      <button class="file-menu-item" onclick="toggleFocusMode()" id="btn-focus" role="menuitem">⛶ Focus mode <span class="file-menu-hint">F11</span></button>
+      <button class="file-menu-item" onclick="toggleTypewriterMode()" id="btn-typewriter" role="menuitem">⌨ Typewriter mode</button>
+    </div>
+  </div>
 
   <div class="toolbar-sep"></div>
   <button class="tbtn" id="btn-theme" onclick="toggleTheme()" title="Toggle theme">🌙</button>
@@ -1100,6 +1089,30 @@ function updateTitle(val) {
   document.getElementById('sb-script-name').textContent = proj.title;
   scheduleSave();
 }
+
+function toggleFileMenu(event) {
+  event?.stopPropagation();
+  const menu = document.getElementById('file-menu');
+  const button = document.getElementById('btn-file-menu');
+  const isOpen = menu.classList.toggle('open');
+  button.setAttribute('aria-expanded', String(isOpen));
+}
+
+function closeFileMenu() {
+  const menu = document.getElementById('file-menu');
+  const button = document.getElementById('btn-file-menu');
+  if (!menu || !button) return;
+  menu.classList.remove('open');
+  button.setAttribute('aria-expanded', 'false');
+}
+
+document.addEventListener('click', event => {
+  if (event.target.closest('.file-menu-item') || !event.target.closest('#file-menu')) closeFileMenu();
+});
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') closeFileMenu();
+});
 
 // ═══════════════════════════════════════════
 //  DOM ↔ DATA SYNC
@@ -2056,7 +2069,9 @@ function openCoverPageDialog() {
   const proj = getProject();
   const c = proj.cover || {};
   showModal('Cover Page Settings',
-    `<label>Show Cover Page</label>
+    `<label>Script Title</label>
+     <input id="cp-title" type="text" value="${escHtml(proj.title || '')}" placeholder="Your screenplay title">
+     <label>Show Cover Page</label>
      <select id="cp-show">
        <option value="1" ${c.show ? 'selected' : ''}>Yes — include cover page</option>
        <option value="0" ${!c.show ? 'selected' : ''}>No — hide cover page</option>
@@ -2080,6 +2095,7 @@ function openCoverPageDialog() {
     [
       {label:'Cancel', primary:false, action:closeModal},
       {label:'Save Cover Page', primary:true, action:() => {
+        const coverTitle = document.getElementById('cp-title').value.trim();
         proj.cover = {
           show: document.getElementById('cp-show').value === '1',
           author: document.getElementById('cp-author').value.trim(),
@@ -2091,6 +2107,10 @@ function openCoverPageDialog() {
           copyright: document.getElementById('cp-copyright').value.trim(),
           wga: document.getElementById('cp-wga').value.trim(),
         };
+        if (coverTitle) {
+          updateTitle(coverTitle);
+          document.getElementById('script-title').value = coverTitle;
+        }
         closeModal();
         renderScript();
         scheduleSave();
