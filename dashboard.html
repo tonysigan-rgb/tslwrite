@@ -279,5 +279,73 @@ function requestQuotes() {
 
 buildFilmMarketplace();
 </script>
+<style>
+/* Books-style project library */
+.project-library-view{max-width:1060px;margin:0 auto}.project-library-view .section-head{padding:7px 0 22px;border-bottom:1px solid var(--line);margin-bottom:23px}.project-library-view .section-head h2{font-size:27px;letter-spacing:-.7px}.project-library-view .section-head p{font-size:14px}.library-actions{display:flex;gap:9px;align-items:center}.library-actions .button{padding:10px 14px}.library-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.script-library-card{background:#fff;border:1px solid #dde4e6;border-radius:10px;overflow:hidden;box-shadow:0 3px 10px rgba(20,46,60,.05);transition:transform .16s,box-shadow .16s}.script-library-card:hover{transform:translateY(-2px);box-shadow:0 9px 22px rgba(20,46,60,.11)}.script-cover{height:145px;padding:17px;color:#fff;position:relative;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}.script-cover:before{content:"";position:absolute;inset:0;background:linear-gradient(150deg,rgba(255,255,255,.18),transparent 40%,rgba(0,0,0,.2))}.script-cover:after{content:"FADE IN.";position:absolute;top:16px;left:17px;font:700 10px monospace;letter-spacing:1.5px;opacity:.72}.script-cover h3{position:relative;z-index:1;margin:0;font-size:20px;line-height:1.1;max-width:83%;word-break:break-word}.script-cover span{position:relative;z-index:1;margin-top:7px;font-size:11px;opacity:.78;text-transform:uppercase;font-weight:800;letter-spacing:.7px}.cover-one{background:linear-gradient(130deg,#295061,#173340)}.cover-two{background:linear-gradient(130deg,#72544b,#35252e)}.cover-three{background:linear-gradient(130deg,#376752,#193b37)}.cover-four{background:linear-gradient(130deg,#554170,#2d274e)}.cover-five{background:linear-gradient(130deg,#806439,#4d3d24)}.library-card-body{padding:15px}.library-meta{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#697983;margin-bottom:13px}.draft-status{color:#5c7900;background:#eef6c9;border-radius:20px;padding:4px 8px;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.45px}.library-progress{height:5px;background:#e4eaec;border-radius:4px;overflow:hidden;margin:8px 0 6px}.library-progress i{display:block;height:100%;background:var(--lime);border-radius:inherit}.library-progress-note{font-size:11px;color:#788790}.library-card-actions{display:flex;align-items:center;gap:8px;margin-top:15px}.library-card-actions .project-options-btn{margin-left:auto}.new-script-card{min-height:277px;background:#fbfcfc;border:1.5px dashed #b4c1c7;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#617984;cursor:pointer;border-radius:10px}.new-script-card:hover{border-color:var(--lime);background:#fefff7}.new-script-symbol{height:45px;width:45px;border:1px solid #b9c6cc;border-radius:50%;display:grid;place-items:center;font-size:25px;margin-bottom:10px}.new-script-card strong{font-size:14px}.new-script-card span{font-size:12px;margin-top:4px}.library-empty{grid-column:1/-1;padding:55px;text-align:center;border:1.5px dashed #b4c1c7;border-radius:10px;color:#6b7c86}.library-empty h3{color:#354d5b;margin:0 0 7px}.library-empty p{font-size:13px;margin:0 0 15px}@media(max-width:800px){.library-grid{grid-template-columns:1fr}.project-library-view .section-head{align-items:flex-start;flex-direction:column}.library-actions{width:100%}.library-actions .button{flex:1}}
+</style>
+<script>
+const renderDashboardProjectsWithOptions = displayProjects;
+const coverClasses = ['cover-one','cover-two','cover-three','cover-four','cover-five'];
+
+displayProjects = function renderProjectsLibrary() {
+  renderDashboardProjectsWithOptions();
+  const section = document.getElementById('projects');
+  if (!section) return;
+  section.classList.add('project-library-view');
+  section.querySelector('.section-head h2').textContent = 'My screenplays';
+  section.querySelector('.section-head p').textContent = 'Continue writing, manage your drafts, or start a new story.';
+  const head = section.querySelector('.section-head');
+  const oldNew = head.querySelector('.text-btn');
+  if (oldNew) oldNew.outerHTML = '<div class="library-actions"><button class="button outline" onclick="showToast(\'Import is coming soon.\')">Import script</button><button class="button primary" onclick="openWriterNew()">＋ New script</button></div>';
+  const grid = document.getElementById('project-grid');
+  if (!projects.length) {
+    grid.className = 'library-grid';
+    grid.innerHTML = '<div class="library-empty"><h3>Start your next screenplay</h3><p>Create a project to begin writing, sharing, and pitching your story.</p><button class="button primary" onclick="openWriterNew()">Create a script</button></div>';
+    return;
+  }
+  grid.className = 'library-grid';
+  grid.innerHTML = projects.map((project,index) => {
+    const words = wordCount(project);
+    const progress = Math.min(100, Math.round(words / 900));
+    const updated = project.updated ? new Date(project.updated).toLocaleDateString() : 'Recently created';
+    const format = formatName(project.format || 'screenplay');
+    return `<article class="script-library-card"><div class="script-cover ${coverClasses[index % coverClasses.length]}"><h3>${escapeHtml(project.title || 'Untitled Script')}</h3><span>${format}</span></div><div class="library-card-body"><div class="library-meta"><span>${words.toLocaleString()} words</span><span class="draft-status">Draft</span></div><div class="library-progress"><i style="width:${progress}%"></i></div><div class="library-progress-note">Last updated ${updated}</div><div class="library-card-actions"><button class="button primary" onclick="openWriter('${project.id}')">Continue</button><button class="button outline" onclick="openProjectSharing('${project.id}')">Share</button><button class="project-options-btn" title="Project options" aria-label="Project options" onclick="openProjectOptions('${project.id}')">⋯</button></div></div></article>`;
+  }).join('') + '<button class="new-script-card" onclick="openWriterNew()"><span class="new-script-symbol">＋</span><strong>New screenplay</strong><span>Start from a blank draft</span></button>';
+};
+
+function setActiveNavigation(index) {
+  document.querySelectorAll('.nav-links .nav-link').forEach((link,i) => link.classList.toggle('active', i === index));
+}
+
+function showProjectsLibrary() {
+  document.querySelector('.hero').style.display = 'none';
+  document.querySelector('.channels').style.display = 'none';
+  document.querySelector('.stats').style.display = 'none';
+  document.getElementById('marketplace').style.display = 'none';
+  document.querySelector('.wrap').style.paddingTop = '34px';
+  document.getElementById('projects').style.display = 'block';
+  setActiveNavigation(2);
+  displayProjects();
+  window.history.replaceState({}, '', 'dashboard.html?view=projects');
+}
+
+function showMarketplaceDashboard() {
+  document.querySelector('.hero').style.display = '';
+  document.querySelector('.channels').style.display = '';
+  document.querySelector('.stats').style.display = '';
+  document.getElementById('marketplace').style.display = '';
+  document.getElementById('projects').style.display = 'block';
+  document.querySelector('.wrap').style.paddingTop = '';
+  setActiveNavigation(1);
+  window.history.replaceState({}, '', 'dashboard.html');
+}
+
+const navigation = document.querySelectorAll('.nav-links .nav-link');
+navigation[0].onclick = showMarketplaceDashboard;
+navigation[1].onclick = showMarketplaceDashboard;
+navigation[2].onclick = showProjectsLibrary;
+document.querySelector('.channel-inner .channel').onclick = showProjectsLibrary;
+if (new URLSearchParams(window.location.search).get('view') === 'projects') showProjectsLibrary();
+</script>
 </body>
 </html>
