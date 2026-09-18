@@ -240,22 +240,16 @@ body.typewriter-mode .editor-area{scroll-behavior:smooth}
   .main{overflow:visible!important;height:auto!important;display:block!important}
   .toolbar,.sidebar,.right-panel,.statusbar,.editor-area > *:not(.script-page):not(.cover-page){display:none!important}
   .editor-area{background:white!important;padding:0!important;overflow:visible!important;height:auto!important;display:block!important}
+  /* Cover page: flex centering + exactly 1 page tall */
+  .cover-page{box-shadow:none!important;margin:0!important;padding:1in!important;width:100%!important;height:100vh!important;border-radius:0!important;display:flex!important;flex-direction:column!important;break-after:always!important;page-break-after:always!important}
+  .cover-title-area{flex:1!important;display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;text-align:center!important}
+  .cover-page-edit-btn{display:none!important}
+  /* Script page */
   .script-page{box-shadow:none!important;margin:0!important;padding:0!important;width:auto!important;border-radius:0!important;height:auto!important;overflow:visible!important}
   .script-block::after,.script-block:focus{background:none!important}
   .beat-view,.cards-view,.stats-view{display:none!important}
   .page-break-line{display:none!important}
-  /* Running page number in top-right corner */
-  .script-page::after{
-    content: counter(page) '.';
-    position: fixed;
-    top: .5in;
-    right: 1in;
-    font-family: 'Courier New', monospace;
-    font-size: 12pt;
-    color: #000;
-  }
-  /* Don't show page number on page 1 */
-  .script-page{counter-reset: none}
+  #pdf-watermark{display:none!important}
 }
 
 /* ── Misc ── */
@@ -410,10 +404,6 @@ body:not(.focus-mode) .focus-exit{display:none}
 .cover-contact-area{border-top:1px solid #ccc;padding-top:.2in;font-size:10pt;line-height:1.8;color:#333}
 .cover-contact-right{text-align:right;float:right;margin-top:-.1in}
 .cover-wga{margin-top:.1in;font-size:10pt}
-@media print {
-  .cover-page-edit-btn{display:none!important}
-  .cover-page{box-shadow:none!important;margin:0!important;page-break-after:always}
-}
 /* ── User bar ── */
 .user-bar{display:flex;align-items:center;gap:8px;margin-left:auto}
 .user-avatar{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
@@ -2770,16 +2760,7 @@ function exportFDX() {
 function exportPDF() {
   const proj = getProject();
   if (!proj) return alert('Open a script first.');
-  const title = proj.title || 'Untitled Script';
-  const author = (proj.cover && proj.cover.author) || '';
-  document.getElementById('pdf-wm-title').textContent = title;
-  document.getElementById('pdf-wm-author').textContent = author;
-  document.body.classList.add('pdf-exporting');
   window.print();
-  window.addEventListener('afterprint', function once() {
-    document.body.classList.remove('pdf-exporting');
-    window.removeEventListener('afterprint', once);
-  });
 }
 
 // ═══════════════════════════════════════════
@@ -3408,9 +3389,5 @@ function init() {
 
 init();
 </script>
-<div id="pdf-watermark">
-  <div id="pdf-wm-title"></div>
-  <div id="pdf-wm-author"></div>
-</div>
 </body>
 </html>
