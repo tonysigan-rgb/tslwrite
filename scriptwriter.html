@@ -101,7 +101,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 [data-theme="light"] .editor-area{background:#d8dce4}
 
 /* Page */
-.script-page{background:#fff;width:8.5in;min-height:11in;padding:1in 1in 1in 1.5in;box-shadow:0 4px 24px rgba(0,0,0,.25);border-radius:1px;font-family:'Courier New',Courier,monospace;font-size:12pt;line-height:1;color:#000;position:relative;margin-bottom:24px}
+.script-page{background:#fff;width:8.5in;padding:1in 1in 1in 1.5in;box-shadow:0 4px 24px rgba(0,0,0,.25);border-radius:1px;font-family:'Courier New',Courier,monospace;font-size:12pt;line-height:1;color:#000;position:relative;margin-bottom:24px}
 
 /* Page number */
 .page-num-stamp{position:absolute;top:.75in;right:1in;font-family:'Courier New',monospace;font-size:12pt;color:#000}
@@ -140,7 +140,6 @@ body.typewriter-mode .editor-area{scroll-behavior:smooth}
 
 /* Print: page numbers */
 @media print {
-  .script-page::before{content:attr(data-page-num) '.' attr(data-page-title);position:fixed;top:.5in;right:1in;font-family:'Courier New',monospace;font-size:12pt;color:#000}
   .page-num-stamp{display:block}
 }
 
@@ -237,12 +236,29 @@ body.typewriter-mode .editor-area{scroll-behavior:smooth}
 ::-webkit-scrollbar-thumb:hover{background:var(--text-muted)}
 
 /* Print */
+@page {
+  size: A4;
+  margin: 1in 1in 1in 1.5in;
+}
 @media print {
-  .toolbar,.sidebar,.right-panel,.statusbar,.editor-area > *:not(.script-page){display:none!important}
+  .toolbar,.sidebar,.right-panel,.statusbar,.editor-area > *:not(.script-page):not(.cover-page){display:none!important}
   .editor-area{background:white!important;padding:0!important;overflow:visible!important;display:block!important}
-  .script-page{box-shadow:none!important;margin:0!important;min-height:auto!important}
+  .script-page{box-shadow:none!important;margin:0!important;padding:0!important;width:auto!important;border-radius:0!important}
   .script-block::after,.script-block:focus{background:none!important}
   .beat-view,.cards-view,.stats-view{display:none!important}
+  .page-break-line{display:none!important}
+  /* Running page number in top-right corner */
+  .script-page::after{
+    content: counter(page) '.';
+    position: fixed;
+    top: .5in;
+    right: 1in;
+    font-family: 'Courier New', monospace;
+    font-size: 12pt;
+    color: #000;
+  }
+  /* Don't show page number on page 1 */
+  .script-page{counter-reset: none}
 }
 
 /* ── Misc ── */
@@ -2796,36 +2812,10 @@ function exportFDX() {
 //  PDF WITH PAGE NUMBERS
 // ═══════════════════════════════════════════
 
-// Inject page-number stamps into script page before printing, remove after
 function exportPDF() {
   const proj = getProject();
   if (!proj) return alert('Open a script first.');
-
-  // Inject page number header stamp
-  const page = document.getElementById('script-page');
-  if (page) {
-    const totalLines = Array.from(page.querySelectorAll('.script-block')).reduce((sum, el) => {
-      return sum + Math.max(1, (el.innerText||'').split('\n').length);
-    }, 0);
-    const totalPages = Math.max(1, Math.ceil(totalLines / 55));
-    page.dataset.pageTitle = (proj.title || 'Untitled').toUpperCase();
-
-    // Stamp each page with number (approximate via existing page-break-line positions)
-    const stamps = [];
-    for (let p = 2; p <= totalPages; p++) {
-      const stamp = document.createElement('div');
-      stamp.className = 'page-num-stamp print-only';
-      stamp.style.cssText = `position:absolute;top:${(p-1)*55*20 + 8}px;right:0;font-family:'Courier New',monospace;font-size:12pt;color:#000`;
-      stamp.textContent = p + '.';
-      page.appendChild(stamp);
-      stamps.push(stamp);
-    }
-
-    window.print();
-    stamps.forEach(s => s.remove());
-  } else {
-    window.print();
-  }
+  window.print();
 }
 
 // ═══════════════════════════════════════════
