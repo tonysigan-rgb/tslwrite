@@ -139,11 +139,6 @@ body.typewriter-mode .editor-area{scroll-behavior:smooth}
 /* Draft watermark (toggle) */
 .script-page.watermark::after{content:'DRAFT';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:3in;font-family:'Courier New',monospace;font-weight:bold;color:rgba(0,0,0,.06);pointer-events:none;z-index:0;letter-spacing:.2em}
 
-/* PDF export watermark */
-#pdf-watermark{display:none;position:fixed;inset:0;pointer-events:none;z-index:9999;align-items:center;justify-content:center;flex-direction:column;transform:rotate(-35deg);font-family:'Courier New',monospace;font-weight:bold;color:#000;text-align:center}
-#pdf-wm-title{font-size:2.5rem;text-transform:uppercase;letter-spacing:.08em;line-height:1.2;max-width:5.5in;word-break:break-word}
-#pdf-wm-author{font-size:1.5rem;margin-top:.4rem;max-width:5.5in;word-break:break-word}
-@media print{body.pdf-exporting #pdf-watermark{display:flex!important;opacity:.08}}
 
 /* Print: page numbers */
 @media print {
@@ -240,10 +235,12 @@ body.typewriter-mode .editor-area{scroll-behavior:smooth}
   .main{overflow:visible!important;height:auto!important;display:block!important}
   .toolbar,.sidebar,.right-panel,.statusbar,.editor-area > *:not(.script-page):not(.cover-page){display:none!important}
   .editor-area{background:white!important;padding:0!important;overflow:visible!important;height:auto!important;display:block!important}
-  /* Cover page: flex centering + exactly 1 page tall */
-  .cover-page{box-shadow:none!important;margin:0!important;padding:1in!important;width:100%!important;height:100vh!important;border-radius:0!important;display:flex!important;flex-direction:column!important;break-after:always!important;page-break-after:always!important}
-  .cover-title-area{flex:1!important;display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;text-align:center!important}
+  /* Cover page: fits 1 page, title centred via top-padding */
+  .cover-page{box-shadow:none!important;margin:0!important;padding:0!important;width:100%!important;min-height:0!important;height:auto!important;max-height:9.5in!important;overflow:hidden!important;border-radius:0!important;display:block!important;break-after:always!important;page-break-after:always!important}
   .cover-page-edit-btn{display:none!important}
+  .cover-title-area{display:block!important;text-align:center!important;padding:3in 0 .5in!important}
+  .cover-title{text-align:center!important}
+  .cover-contact-area{text-align:left!important;margin-top:.5in!important}
   /* Script page */
   .script-page{box-shadow:none!important;margin:0!important;padding:0!important;width:auto!important;border-radius:0!important;height:auto!important;overflow:visible!important}
   .script-block::after,.script-block:focus{background:none!important}
