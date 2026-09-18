@@ -41,6 +41,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tbtn:hover{background:rgba(255,255,255,0.1);color:#fff}
 .tbtn.active{background:var(--accent);color:#fff}
 .tbtn.danger:hover{background:rgba(255,80,80,0.2);color:#ff8080}
+.file-menu{position:relative}
+.file-menu-list{display:none;position:absolute;top:calc(100% + 7px);left:0;z-index:1200;min-width:216px;padding:6px;background:#1e2d40;border:1px solid rgba(255,255,255,.14);border-radius:9px;box-shadow:0 14px 30px rgba(0,0,0,.32)}
+.file-menu.open .file-menu-list{display:block}
+.file-menu-item{width:100%;border:0;border-radius:6px;background:transparent;color:rgba(255,255,255,.84);padding:9px 10px;font:inherit;font-size:12px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:9px}
+.file-menu-item:hover,.file-menu-item.active{background:rgba(255,255,255,.1);color:#fff}
+.file-menu-item svg{width:15px;height:15px;flex-shrink:0}
+.file-menu-divider{height:1px;background:rgba(255,255,255,.12);margin:5px 4px}
+.file-menu-hint{margin-left:auto;color:rgba(255,255,255,.42);font-size:10px}
 .title-wrap{flex:1;display:flex;justify-content:center}
 .script-title-input{background:transparent;border:none;color:rgba(255,255,255,.9);font-size:14px;font-weight:700;text-align:center;padding:4px 10px;border-radius:6px;cursor:pointer;max-width:360px;width:100%}
 .script-title-input:focus{outline:none;background:rgba(255,255,255,.1);color:#fff}
@@ -88,13 +96,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .char-item{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:7px 10px;display:flex;justify-content:space-between;align-items:center}
 .char-name{font-size:12px;font-weight:700}
 .char-count{font-size:11px;color:var(--accent);font-weight:700}
-
-/* Beat Sheet sidebar */
-.beat-mini-item{padding:6px 10px;border-radius:6px;border:1px solid var(--border);cursor:pointer;transition:all .15s}
-.beat-mini-item:hover{border-color:var(--accent)}
-.beat-mini-item.has-note{border-color:rgba(233,69,96,.4);background:rgba(233,69,96,.05)}
-.beat-mini-title{font-size:11px;font-weight:700;color:var(--accent)}
-.beat-mini-pages{font-size:10px;color:var(--text-muted)}
 
 /* ── Editor Center ── */
 .editor-area{flex:1;overflow-y:auto;background:#c8cdd5;display:flex;flex-direction:column;align-items:center;padding:24px 24px 100px;position:relative}
@@ -176,21 +177,9 @@ body.typewriter-mode .editor-area{scroll-behavior:smooth}
 .statusbar{background:var(--toolbar-bg);padding:3px 16px;display:flex;align-items:center;gap:20px;font-size:11px;color:rgba(255,255,255,.45);flex-shrink:0;border-top:1px solid rgba(255,255,255,.06)}
 .sb-item{display:flex;align-items:center;gap:5px}
 
-/* ── Beat Sheet View ── */
-.beat-view{display:none;flex:1;overflow-y:auto;padding:24px;gap:16px;flex-direction:column;background:var(--bg)}
-.beat-view.active{display:flex}
-.beat-view-header{font-size:20px;font-weight:800;color:var(--text)}
-.beat-view-sub{font-size:13px;color:var(--text-muted);margin-top:4px}
-.beats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
-.beat-card{background:var(--sidebar-bg);border:1px solid var(--border);border-radius:10px;padding:14px;transition:all .2s;cursor:default}
-.beat-card:hover{border-color:var(--accent);box-shadow:0 0 0 3px rgba(233,69,96,.1)}
-.beat-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
-.beat-card-title{font-size:13px;font-weight:800;color:var(--accent)}
-.beat-card-pages{font-size:11px;color:var(--text-muted);background:rgba(255,255,255,.05);padding:2px 7px;border-radius:12px;border:1px solid var(--border)}
-.beat-card-desc{font-size:11px;color:var(--text-muted);line-height:1.5;margin-bottom:8px}
-.beat-note{width:100%;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:6px;padding:7px 9px;color:var(--text);font-size:12px;resize:vertical;min-height:56px;font-family:inherit;outline:none;transition:border-color .15s}
-.beat-note:focus{border-color:var(--accent)}
-.beat-note::placeholder{color:var(--text-muted)}
+/* ── Shared view headings ── */
+.view-header{font-size:20px;font-weight:800;color:var(--text)}
+.view-sub{font-size:13px;color:var(--text-muted);margin-top:4px}
 
 /* ── Index Cards / Story Board View ── */
 .cards-view{display:none;flex:1;overflow-y:auto;padding:24px;background:var(--bg);flex-direction:column;gap:16px}
@@ -433,6 +422,54 @@ body:not(.focus-mode) .focus-exit{display:none}
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<style>
+/* Keep the app hidden until Firebase confirms that this visitor is signed in. */
+html.auth-pending body { visibility: hidden; }
+</style>
+<script>
+// This page is an authenticated route. Keep this config in sync with index.html.
+window.tslWriteFirebaseConfig = {
+  apiKey:            "AIzaSyAQKZ7_ocuATRPWf6ljC8U4K0rCQKo3Um0",
+  authDomain:        "tslwrite.firebaseapp.com",
+  projectId:         "tslwrite",
+  storageBucket:     "tslwrite.firebasestorage.app",
+  messagingSenderId: "395801581699",
+  appId:             "1:395801581699:web:ef82500d81fe379cffa3b6"
+};
+
+(function guardScriptwriterRoute() {
+  document.documentElement.classList.add('auth-pending');
+
+  window.redirectToSignIn = function redirectToSignIn() {
+    const loginUrl = new URL('index.html', window.location.href);
+    loginUrl.searchParams.set('reason', 'signin-required');
+    window.location.replace(loginUrl.href);
+  };
+
+  const launchParams = new URLSearchParams(window.location.search);
+  if (!launchParams.get('project') && launchParams.get('new') !== '1') {
+    window.location.replace('dashboard.html');
+    return;
+  }
+
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(window.tslWriteFirebaseConfig);
+    firebase.auth().onAuthStateChanged(
+      user => {
+        if (!user) return window.redirectToSignIn();
+        document.documentElement.classList.remove('auth-pending');
+      },
+      error => {
+        console.warn('Firebase authentication check failed:', error);
+        window.redirectToSignIn();
+      }
+    );
+  } catch (error) {
+    console.warn('Firebase authentication check failed:', error);
+    window.redirectToSignIn();
+  }
+}());
+</script>
 
 </head>
 <body>
@@ -446,13 +483,14 @@ body:not(.focus-mode) .focus-exit{display:none}
     <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="3" width="14" height="1.5" rx=".75"/><rect x="1" y="7.25" width="14" height="1.5" rx=".75"/><rect x="1" y="11.5" width="14" height="1.5" rx=".75"/></svg>
   </button>
 
+  <button class="tbtn" onclick="window.location.href='dashboard.html'" title="Back to dashboard">
+    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M6.1 2.2 1.3 7l4.8 4.8 1-1L3.9 7.6H14V6.2H3.9l3.2-3.1z"/></svg>
+    Dashboard
+  </button>
+
   <button class="tbtn" id="btn-view-editor" onclick="setView('editor')" title="Script Editor">
     <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v1.5H2zM2 6.5h12V8H2zM2 10h8v1.5H2z"/></svg>
     Editor
-  </button>
-  <button class="tbtn" id="btn-view-beat" onclick="setView('beat')">
-    <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6.5" height="6.5" rx="1"/><rect x="8.5" y="1" width="6.5" height="6.5" rx="1"/><rect x="1" y="8.5" width="6.5" height="6.5" rx="1"/><rect x="8.5" y="8.5" width="6.5" height="6.5" rx="1"/></svg>
-    Beat Sheet
   </button>
   <button class="tbtn" id="btn-view-cards" onclick="setView('cards')">
     <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="2" width="4.5" height="6" rx="1"/><rect x="6.5" y="2" width="4.5" height="6" rx="1"/><rect x="12" y="2" width="3" height="6" rx="1"/><rect x="1" y="10" width="4.5" height="4" rx="1"/><rect x="6.5" y="10" width="4.5" height="4" rx="1"/></svg>
@@ -476,44 +514,25 @@ body:not(.focus-mode) .focus-exit{display:none}
   <span class="autosave-indicator" id="autosave-indicator">Saved</span>
   <div class="toolbar-sep"></div>
 
-  <button class="tbtn" onclick="openCoverPageDialog()" title="Edit cover page">
-    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 1h10v14H3z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M6 5h4M6 7.5h4M6 10h3" stroke="currentColor" stroke-width="1" fill="none"/><path d="M5 2.5h6" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
-    Cover Page
-  </button>
-  <button class="tbtn" onclick="exportPDF()" title="Export / Print">
-    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 1h6l3 3v10H3V1zm5 0v4h4"/><path d="M5 8h6M5 10.5h6M5 5.5h4" stroke="currentColor" stroke-width="1" fill="none"/></svg>
-    Export PDF
-  </button>
-  <button class="tbtn" onclick="toggleWatermark()" id="btn-watermark" title="Toggle DRAFT watermark on PDF">
-    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 12L7 3l3 5 2-3 4 7H2z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
-    Watermark
-  </button>
-  <button class="tbtn" onclick="exportTXT()" title="Export as plain text">TXT</button>
-  <button class="tbtn" onclick="openImportDialog()" title="Import script file">
-    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1v9M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 11v2a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-2" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round"/></svg>
-    Import
-  </button>
-
-  <button class="tbtn" onclick="exportFountain()" title="Export as .fountain">
-    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1L3 5h3v9h4V5h3z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
-    .fountain
-  </button>
-  <button class="tbtn" onclick="toggleFindReplace()" title="Find &amp; Replace (Ctrl+H)" id="btn-fnr">
-    <svg viewBox="0 0 16 16" fill="currentColor"><circle cx="6" cy="6" r="4" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M9 9l4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M11 5h3M12.5 3.5v3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-    Find
-  </button>
-  <button class="tbtn" onclick="toggleFocusMode()" title="Focus / Distraction-Free Mode (F11)" id="btn-focus">
-    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 5V2h3M12 2h3v3M15 11v3h-3M4 14H1v-3" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    Focus
-  </button>
-  <button class="tbtn" onclick="toggleTypewriterMode()" title="Typewriter scroll mode" id="btn-typewriter">
-    <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="10" width="14" height="2" rx="1"/><path d="M4 4h8v5H4z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M6 13v2M10 13v2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-    Typewriter
-  </button>
-  <button class="tbtn" onclick="exportFDX()" title="Export as Final Draft (.fdx)">
-    <svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 1h7l3 3v11H3V1zm6 0v4h4" fill="none" stroke="currentColor" stroke-width="1.2"/><text x="4" y="13" font-size="5" font-family="monospace" fill="currentColor">FDX</text></svg>
-    .fdx
-  </button>
+  <div class="file-menu" id="file-menu">
+    <button class="tbtn" type="button" onclick="toggleFileMenu(event)" aria-haspopup="true" aria-expanded="false" id="btn-file-menu">
+      File <span style="font-size:9px;opacity:.7">▾</span>
+    </button>
+    <div class="file-menu-list" role="menu" aria-label="File actions">
+      <button class="file-menu-item" onclick="openCoverPageDialog()" role="menuitem">▤ Cover Page</button>
+      <button class="file-menu-item" onclick="openImportDialog()" role="menuitem">⇩ Import script</button>
+      <div class="file-menu-divider"></div>
+      <button class="file-menu-item" onclick="exportPDF()" role="menuitem">▣ Export PDF <span class="file-menu-hint">Ctrl+P</span></button>
+      <button class="file-menu-item" onclick="exportTXT()" role="menuitem">TXT Export plain text</button>
+      <button class="file-menu-item" onclick="exportFountain()" role="menuitem">⇧ Export .fountain</button>
+      <button class="file-menu-item" onclick="exportFDX()" role="menuitem">FDX Export Final Draft</button>
+      <div class="file-menu-divider"></div>
+      <button class="file-menu-item" onclick="toggleWatermark()" id="btn-watermark" role="menuitem">△ Draft watermark</button>
+      <button class="file-menu-item" onclick="toggleFindReplace()" id="btn-fnr" role="menuitem">⌕ Find &amp; Replace <span class="file-menu-hint">Ctrl+H</span></button>
+      <button class="file-menu-item" onclick="toggleFocusMode()" id="btn-focus" role="menuitem">⛶ Focus mode <span class="file-menu-hint">F11</span></button>
+      <button class="file-menu-item" onclick="toggleTypewriterMode()" id="btn-typewriter" role="menuitem">⌨ Typewriter mode</button>
+    </div>
+  </div>
 
   <div class="toolbar-sep"></div>
   <button class="tbtn" id="btn-theme" onclick="toggleTheme()" title="Toggle theme">🌙</button>
@@ -536,22 +555,13 @@ body:not(.focus-mode) .focus-exit{display:none}
   <!-- ── Left Sidebar ── -->
   <div class="sidebar" id="sidebar">
     <div class="sidebar-tabs">
-      <div class="stab active" onclick="switchSTab('projects')" id="stab-projects">Projects</div>
-      <div class="stab" onclick="switchSTab('scenes')" id="stab-scenes">Scenes</div>
+      <div class="stab active" onclick="switchSTab('scenes')" id="stab-scenes">Scenes</div>
       <div class="stab" onclick="switchSTab('characters')" id="stab-characters">Cast</div>
       <div class="stab" onclick="switchSTab('notes')" id="stab-notes">Notes</div>
     </div>
 
-    <!-- Projects Panel -->
-    <div class="sidebar-panel active" id="spanel-projects">
-      <div class="spanel-inner">
-        <button class="add-proj-btn" onclick="newProjectDialog()">＋ New Script</button>
-        <div id="project-list"></div>
-      </div>
-    </div>
-
     <!-- Scenes Panel -->
-    <div class="sidebar-panel" id="spanel-scenes">
+    <div class="sidebar-panel active" id="spanel-scenes">
       <div class="spanel-inner" id="scene-list">
         <div class="empty-state" style="padding:24px 12px">
           <div style="font-size:32px;margin-bottom:8px">🎬</div>
@@ -589,8 +599,8 @@ body:not(.focus-mode) .focus-exit{display:none}
         <div id="no-script-state" class="empty-state" style="margin-top:80px">
           <div class="empty-state-icon">🎬</div>
           <div class="empty-state-title">No Script Open</div>
-          <div class="empty-state-desc">Create a new script from the Projects tab<br>or click "＋ New Script" to get started</div>
-          <button class="add-proj-btn" onclick="newProjectDialog()" style="width:auto;margin-top:16px;padding:10px 24px">Create New Script</button>
+          <div class="empty-state-desc">Choose a screenplay from your dashboard<br>to start writing.</div>
+          <button class="tbtn active" onclick="window.location.href='dashboard.html?view=projects'" style="margin:16px auto 0;padding:10px 18px">Open Dashboard</button>
         </div>
         <!-- Script pages render here -->
       </div>
@@ -666,27 +676,18 @@ body:not(.focus-mode) .focus-exit{display:none}
       </div>
     </div>
 
-    <!-- Beat Sheet View -->
-    <div class="beat-view" id="beat-view">
-      <div>
-        <div class="beat-view-header">Beat Sheet — Save the Cat</div>
-        <div class="beat-view-sub">A proven 15-beat story structure for your screenplay. Add your notes to each beat.</div>
-      </div>
-      <div class="beats-grid" id="beats-grid"></div>
-    </div>
-
     <!-- Story Cards View -->
     <div class="cards-view" id="cards-view">
       <div>
-        <div class="beat-view-header">Story Cards</div>
-        <div class="beat-view-sub">Visual overview of your scenes — great for spotting pacing issues.</div>
+        <div class="view-header">Story Cards</div>
+        <div class="view-sub">Visual overview of your scenes — great for spotting pacing issues.</div>
       </div>
       <div class="cards-grid" id="cards-grid"></div>
     </div>
 
     <!-- Stats View -->
     <div class="stats-view" id="stats-view">
-      <div class="beat-view-header">Script Analysis</div>
+      <div class="view-header">Script Analysis</div>
       <div class="stats-big-grid" id="stats-big-grid"></div>
       <div style="font-size:14px;font-weight:800;color:var(--text);margin-top:4px">Character Breakdown</div>
       <table class="char-stats-table" id="char-stats-table" style="width:100%">
@@ -738,8 +739,8 @@ body:not(.focus-mode) .focus-exit{display:none}
     <div class="rev-view" id="rev-view">
       <div class="rev-header-row">
         <div>
-          <div class="beat-view-header">Revision History</div>
-          <div class="beat-view-sub">Auto-saved every 5 changes. Create named versions to lock a draft.</div>
+          <div class="view-header">Revision History</div>
+          <div class="view-sub">Auto-saved every 5 changes. Create named versions to lock a draft.</div>
         </div>
         <div style="display:flex;gap:8px">
           <button class="rev-save-btn" onclick="openDiffView()" style="background:transparent;border:1px solid var(--border)">⇄ Compare</button>
@@ -786,20 +787,7 @@ body:not(.focus-mode) .focus-exit{display:none}
 </div>
 
 <script>
-// ══════════════════════════════════════════════════════
-//  ⚠️  REPLACE THIS WITH YOUR FIREBASE PROJECT CONFIG
-//  Go to: https://console.firebase.google.com
-//  → Your project → Project Settings → Your apps → Config
-// ══════════════════════════════════════════════════════
-const firebaseConfig = {
-  apiKey:            "AIzaSyAQKZ7_ocuATRPWf6ljC8U4K0rCQKo3Um0",
-  authDomain:        "tslwrite.firebaseapp.com",
-  projectId:         "tslwrite",
-  storageBucket:     "tslwrite.firebasestorage.app",
-  messagingSenderId: "395801581699",
-  appId:             "1:395801581699:web:ef82500d81fe379cffa3b6"
-};
-// ══════════════════════════════════════════════════════
+const firebaseConfig = window.tslWriteFirebaseConfig;
 
 let _fbAuth = null, _fbDb = null, _currentUser = null;
 
@@ -812,11 +800,13 @@ function initFirebase() {
 
     _fbAuth.onAuthStateChanged(user => {
       _currentUser = user;
+      if (!user) return window.redirectToSignIn();
       updateUserBar(user);
-      if (user) loadProjectsFromFirestore();
+      loadProjectsFromFirestore();
     });
   } catch(e) {
     console.warn('Firebase init failed:', e);
+    window.redirectToSignIn();
   }
 }
 
@@ -907,6 +897,7 @@ async function loadProjectsFromFirestore() {
     });
 
     saveState();
+    applyDashboardLaunchRequest();
     renderAll();
     setCloudStatus('synced');
   } catch(e) {
@@ -973,24 +964,6 @@ const EMPTY_ENTER_NEXT = {
   'general':  'action',
 };
 
-const BEAT_SHEET = [
-  {id:'opening',    title:'1. Opening Image',        pages:'p. 1',      desc:'A snapshot of the hero\'s world before the adventure begins. The "before" picture.'},
-  {id:'theme',      title:'2. Theme Stated',         pages:'p. 5',      desc:'Someone (usually not the hero) states the theme of the movie — the lesson the hero will learn.'},
-  {id:'setup',      title:'3. Set-Up',               pages:'pp. 1-10',  desc:'Introduce the hero in their ordinary world. Plant all the seeds to be paid off later.'},
-  {id:'catalyst',   title:'4. Catalyst',             pages:'p. 12',     desc:'The inciting incident that knocks the hero\'s world off-balance and starts the journey.'},
-  {id:'debate',     title:'5. Debate',               pages:'pp. 12-25', desc:'The hero hesitates — Should they go on this adventure? What will they lose if they do?'},
-  {id:'break2',     title:'6. Break Into Two',        pages:'p. 25',     desc:'The hero makes a choice and enters a new world — the upside-down world of Act Two.'},
-  {id:'bstory',     title:'7. B Story',              pages:'p. 30',     desc:'A secondary story begins (often love interest). This is where the theme is discussed directly.'},
-  {id:'fun',        title:'8. Fun & Games',          pages:'pp. 30-55', desc:'The hero explores the new world. The promise of the premise is delivered here.'},
-  {id:'midpoint',   title:'9. Midpoint',             pages:'p. 55',     desc:'Either a false victory or false defeat. Stakes are raised; the hero can no longer go back.'},
-  {id:'badguys',    title:'10. Bad Guys Close In',   pages:'pp. 55-75', desc:'The opposition regroups and bears down. Internal and external conflict intensifies.'},
-  {id:'alllost',    title:'11. All Is Lost',         pages:'p. 75',     desc:'The lowest point. Everything the hero gained seems lost. A "whiff of death" moment.'},
-  {id:'darknight',  title:'12. Dark Night of Soul',  pages:'pp. 75-85', desc:'The hero sits in the darkness of defeat and digs deep to find the will to go on.'},
-  {id:'break3',     title:'13. Break Into Three',    pages:'p. 85',     desc:'The hero has a breakthrough — the solution to the problem is found, thanks to the B story.'},
-  {id:'finale',     title:'14. Finale',              pages:'pp. 85-110',desc:'The hero storms the castle. The new tools and lessons from Act Two are proven and applied.'},
-  {id:'closing',    title:'15. Final Image',         pages:'p. 110',    desc:'The mirror of the opening image, showing how much the world (and the hero) has changed.'},
-];
-
 // ═══════════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════════
@@ -1038,6 +1011,13 @@ function loadState() {
   } catch(e) {}
 }
 
+function applyDashboardLaunchRequest() {
+  const requestedId = new URLSearchParams(window.location.search).get('project');
+  if (requestedId && state.projects.some(project => project.id === requestedId)) {
+    state.currentProjectId = requestedId;
+  }
+}
+
 function scheduleSave() {
   showSaveIndicator('saving');
   clearTimeout(saveTimer);
@@ -1066,7 +1046,6 @@ function createProject(title, format) {
       {id: uid(), type: 'action', text: ''},
     ],
     notes: [],
-    beatNotes: {},
     revisions: [],
     cover: {
       show: false,
@@ -1113,10 +1092,33 @@ function updateTitle(val) {
   if (!proj) return;
   proj.title = val || 'Untitled Script';
   proj.updated = Date.now();
-  renderProjectList();
   document.getElementById('sb-script-name').textContent = proj.title;
   scheduleSave();
 }
+
+function toggleFileMenu(event) {
+  event?.stopPropagation();
+  const menu = document.getElementById('file-menu');
+  const button = document.getElementById('btn-file-menu');
+  const isOpen = menu.classList.toggle('open');
+  button.setAttribute('aria-expanded', String(isOpen));
+}
+
+function closeFileMenu() {
+  const menu = document.getElementById('file-menu');
+  const button = document.getElementById('btn-file-menu');
+  if (!menu || !button) return;
+  menu.classList.remove('open');
+  button.setAttribute('aria-expanded', 'false');
+}
+
+document.addEventListener('click', event => {
+  if (event.target.closest('.file-menu-item') || !event.target.closest('#file-menu')) closeFileMenu();
+});
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') closeFileMenu();
+});
 
 // ═══════════════════════════════════════════
 //  DOM ↔ DATA SYNC
@@ -1142,38 +1144,12 @@ function syncDOMToData() {
 // ═══════════════════════════════════════════
 
 function renderAll() {
-  renderProjectList();
   renderScript();
   renderSceneList();
   renderCharacterList();
   renderNotes();
-  renderBeatSheet();
   renderStatsView();
   updateStatsPanel();
-}
-
-function renderProjectList() {
-  const container = document.getElementById('project-list');
-  container.innerHTML = '';
-  if (!state.projects.length) {
-    container.innerHTML = '<div style="font-size:11px;color:var(--text-muted);text-align:center;padding:16px 0">No scripts yet</div>';
-    return;
-  }
-  state.projects.forEach(p => {
-    const div = document.createElement('div');
-    div.className = 'proj-item' + (p.id === state.currentProjectId ? ' active' : '');
-    div.onclick = () => openProject(p.id);
-    const date = new Date(p.updated).toLocaleDateString();
-    div.innerHTML = `
-      <div class="proj-icon">📄</div>
-      <div class="proj-info">
-        <div class="proj-name">${escHtml(p.title)}</div>
-        <div class="proj-meta">${escHtml(p.format)} · ${date}</div>
-      </div>
-      <button class="proj-del danger tbtn" onclick="deleteProject('${p.id}',event)" title="Delete">✕</button>
-    `;
-    container.appendChild(div);
-  });
 }
 
 function renderScript() {
@@ -1660,41 +1636,6 @@ function updatePageLine(block) {
 }
 
 // ═══════════════════════════════════════════
-//  BEAT SHEET
-// ═══════════════════════════════════════════
-
-function renderBeatSheet() {
-  const grid = document.getElementById('beats-grid');
-  const proj = getProject();
-  grid.innerHTML = '';
-
-  BEAT_SHEET.forEach(beat => {
-    const noteVal = proj?.beatNotes?.[beat.id] || '';
-    const card = document.createElement('div');
-    card.className = 'beat-card';
-    card.innerHTML = `
-      <div class="beat-card-header">
-        <div class="beat-card-title">${escHtml(beat.title)}</div>
-        <div class="beat-card-pages">${escHtml(beat.pages)}</div>
-      </div>
-      <div class="beat-card-desc">${escHtml(beat.desc)}</div>
-      <textarea class="beat-note" placeholder="Your notes for this beat…" data-beat="${beat.id}">${escHtml(noteVal)}</textarea>
-    `;
-    grid.appendChild(card);
-  });
-
-  grid.querySelectorAll('.beat-note').forEach(ta => {
-    ta.addEventListener('input', () => {
-      const proj2 = getProject();
-      if (!proj2) return;
-      proj2.beatNotes = proj2.beatNotes || {};
-      proj2.beatNotes[ta.dataset.beat] = ta.value;
-      scheduleSave();
-    });
-  });
-}
-
-// ═══════════════════════════════════════════
 //  STORY CARDS
 // ═══════════════════════════════════════════
 
@@ -1798,11 +1739,11 @@ function renderStatsView() {
 // ═══════════════════════════════════════════
 
 function setView(view) {
+  // Visitors who last used the removed Beat Sheet should return to the editor.
+  if (view === 'beat') view = 'editor';
   state.currentView = view;
 
   document.getElementById('editor-container').style.display = view === 'editor' ? 'flex' : 'none';
-  document.getElementById('beat-view').style.display = view === 'beat' ? 'flex' : 'none';
-  document.getElementById('beat-view').className = 'beat-view' + (view === 'beat' ? ' active' : '');
   document.getElementById('cards-view').style.display = view === 'cards' ? 'flex' : 'none';
   document.getElementById('cards-view').className = 'cards-view' + (view === 'cards' ? ' active' : '');
   document.getElementById('stats-view').style.display = view === 'stats' ? 'flex' : 'none';
@@ -1812,12 +1753,11 @@ function setView(view) {
   document.getElementById('diff-view').style.display = view === 'diff' ? 'flex' : 'none';
   document.getElementById('diff-view').className = 'diff-view' + (view === 'diff' ? ' active' : '');
 
-  ['editor','beat','cards','stats','revisions'].forEach(v => {
+  ['editor','cards','stats','revisions'].forEach(v => {
     const btn = document.getElementById('btn-view-' + v);
     if (btn) btn.classList.toggle('active', v === view);
   });
 
-  if (view === 'beat') renderBeatSheet();
   if (view === 'cards') renderStoryCards();
   if (view === 'stats') renderStatsView();
   if (view === 'revisions') renderRevisions();
@@ -2005,7 +1945,7 @@ function toggleTheme() {
 // ═══════════════════════════════════════════
 
 function switchSTab(tab) {
-  ['projects','scenes','characters','notes'].forEach(t => {
+  ['scenes','characters','notes'].forEach(t => {
     document.getElementById('stab-' + t).classList.toggle('active', t === tab);
     document.getElementById('spanel-' + t).classList.toggle('active', t === tab);
   });
@@ -2055,7 +1995,7 @@ function newProjectDialog() {
         const proj = createProject(title, format);
         closeModal();
         openProject(proj.id);
-        switchSTab('projects');
+        switchSTab('scenes');
       }},
     ]
   );
@@ -2110,7 +2050,9 @@ function openCoverPageDialog() {
   const proj = getProject();
   const c = proj.cover || {};
   showModal('Cover Page Settings',
-    `<label>Show Cover Page</label>
+    `<label>Script Title</label>
+     <input id="cp-title" type="text" value="${escHtml(proj.title || '')}" placeholder="Your screenplay title">
+     <label>Show Cover Page</label>
      <select id="cp-show">
        <option value="1" ${c.show ? 'selected' : ''}>Yes — include cover page</option>
        <option value="0" ${!c.show ? 'selected' : ''}>No — hide cover page</option>
@@ -2134,6 +2076,7 @@ function openCoverPageDialog() {
     [
       {label:'Cancel', primary:false, action:closeModal},
       {label:'Save Cover Page', primary:true, action:() => {
+        const coverTitle = document.getElementById('cp-title').value.trim();
         proj.cover = {
           show: document.getElementById('cp-show').value === '1',
           author: document.getElementById('cp-author').value.trim(),
@@ -2145,6 +2088,10 @@ function openCoverPageDialog() {
           copyright: document.getElementById('cp-copyright').value.trim(),
           wga: document.getElementById('cp-wga').value.trim(),
         };
+        if (coverTitle) {
+          updateTitle(coverTitle);
+          document.getElementById('script-title').value = coverTitle;
+        }
         closeModal();
         renderScript();
         scheduleSave();
@@ -3422,13 +3369,17 @@ function init() {
     document.getElementById('btn-theme').textContent = '☀️';
   }
 
-  // Ensure beat notes exist on all projects
   state.projects.forEach(p => {
-    if (!p.beatNotes) p.beatNotes = {};
     if (!p.notes) p.notes = [];
     if (!p.revisions) p.revisions = [];
     if (!p.cover) p.cover = {show:false,author:'',contact:'',phone:'',email:'',wga:'',copyright:new Date().getFullYear().toString(),draftDate:'',logline:''};
   });
+
+  if (new URLSearchParams(window.location.search).get('new') === '1') {
+    const project = createProject('Untitled Script', 'screenplay');
+    state.currentProjectId = project.id;
+  }
+  applyDashboardLaunchRequest();
 
   renderAll();
   setView(state.currentView || 'editor');

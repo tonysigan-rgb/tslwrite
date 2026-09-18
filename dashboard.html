@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>tslWrite — Dashboard</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<style>
+:root{--ink:#162735;--navy:#203747;--navy-2:#2c485b;--lime:#a9d300;--lime-dark:#88ae00;--paper:#f4f6f7;--card:#fff;--text:#263541;--muted:#71808a;--line:#dfe5e8;--coral:#ef7561;--shadow:0 10px 28px rgba(22,39,53,.1)}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body.auth-pending{visibility:hidden}.top{background:var(--ink);color:#fff}.nav{height:74px;max-width:1180px;margin:auto;padding:0 28px;display:flex;align-items:center;gap:31px}.brand{font-family:Georgia,serif;font-weight:bold;font-size:30px;letter-spacing:-1.7px;color:#fff;text-decoration:none}.brand span{color:var(--lime)}.nav-links{display:flex;gap:25px;align-self:stretch;align-items:center;flex:1}.nav-link{border:0;background:transparent;color:#edf4f5;font-size:14px;font-weight:700;cursor:pointer;height:100%;padding:0;position:relative}.nav-link.active:after{content:"";height:4px;background:var(--lime);position:absolute;bottom:0;left:0;right:0}.nav-actions{display:flex;align-items:center;gap:10px}.circle{height:38px;width:38px;display:grid;place-items:center;border:0;border-radius:50%;background:#405868;color:#fff;cursor:pointer;font-size:16px}.avatar{height:38px;width:38px;display:grid;place-items:center;background:var(--coral);border:2px solid rgba(255,255,255,.5);border-radius:50%;font-weight:800}.user-name{font-size:14px;font-weight:700;max-width:112px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.user-menu{display:flex;align-items:center;gap:8px;border:0;background:#405868;color:#fff;border-radius:24px;padding:4px 13px 4px 4px;cursor:pointer}.hero{background:var(--ink);color:#fff;border-top:1px solid rgba(255,255,255,.07)}.hero-inner{max-width:1180px;margin:auto;min-height:220px;padding:37px 28px 20px;display:flex;justify-content:space-between;gap:32px;overflow:hidden}.eyebrow{color:var(--lime);font-size:12px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase}.hero h1{font-size:36px;line-height:1.12;margin:10px 0 9px;letter-spacing:-.8px;max-width:620px}.hero p{font-size:17px;line-height:1.45;margin:0;color:#d6e0e3}.hero-art{width:330px;min-width:330px;position:relative}.art-card{position:absolute;width:145px;height:113px;border-radius:14px;background:#f8e6c8;top:14px;left:54px;transform:rotate(-7deg);box-shadow:0 16px 24px rgba(0,0,0,.22)}.art-card:before{content:"SCRIPT";color:#2c485b;font-weight:900;letter-spacing:1px;position:absolute;top:25px;left:25px}.art-card:after{content:"FADE IN:";color:#60717b;font-family:monospace;position:absolute;top:52px;left:25px;font-size:12px}.clapper{position:absolute;right:23px;top:7px;width:138px;height:112px;background:var(--coral);border-radius:11px 11px 26px 26px;transform:rotate(8deg);box-shadow:0 16px 24px rgba(0,0,0,.22)}.clapper:before{content:"";position:absolute;top:-15px;left:-5px;width:148px;height:28px;background:repeating-linear-gradient(135deg,#f8f6ef 0 16px,#263541 16px 32px);border-radius:5px;transform:rotate(-5deg)}.clapper:after{content:"MAKE IT\A HAPPEN";white-space:pre;text-align:center;position:absolute;inset:39px 0 0;font-weight:900;line-height:1.25}.channels{background:var(--navy);box-shadow:0 1px 0 rgba(0,0,0,.1)}.channel-inner{max-width:1180px;margin:auto;display:flex;padding:0 28px;gap:6px}.channel{border:0;background:transparent;color:#e7eff1;min-width:128px;padding:18px 8px 15px;cursor:pointer;font-weight:800;font-size:14px;position:relative}.channel small{display:block;color:#aebfc7;font-weight:600;margin-top:4px}.channel.active:after{content:"";position:absolute;left:14px;right:14px;bottom:0;height:4px;background:var(--lime)}.wrap{max-width:1180px;margin:0 auto;padding:28px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-top:-8px;margin-bottom:27px}.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:17px 19px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 6px rgba(17,37,48,.04)}.stat-icon{background:#eef4d3;color:#5c7900;width:40px;height:40px;border-radius:10px;display:grid;place-items:center;font-size:19px}.stat strong{display:block;font-size:22px}.stat span{font-size:12px;color:var(--muted)}.layout{display:grid;grid-template-columns:minmax(0,1fr) 306px;gap:24px}.section{background:var(--card);border:1px solid var(--line);border-radius:11px;box-shadow:0 2px 7px rgba(17,37,48,.04)}.section-head{padding:20px 23px 15px;display:flex;align-items:center;justify-content:space-between;gap:16px}.section-head h2{font-size:18px;margin:0;letter-spacing:-.2px}.section-head p{margin:4px 0 0;color:var(--muted);font-size:13px}.text-btn{background:transparent;border:0;color:#577300;font-weight:800;font-size:13px;cursor:pointer}.project-grid{padding:0 23px 23px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.project{border:1px solid var(--line);border-radius:9px;padding:15px;background:linear-gradient(135deg,#fff 0,#f8faf9 100%)}.project-top{display:flex;justify-content:space-between;gap:8px}.project h3{font-size:15px;margin:0 0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.project p{margin:0;color:var(--muted);font-size:12px}.pill{border:0;border-radius:20px;padding:5px 9px;font-size:11px;font-weight:800;background:#eff3f4;color:#4d626e;white-space:nowrap}.project-actions{display:flex;align-items:center;gap:8px;margin-top:14px}.button{border:0;border-radius:6px;padding:9px 12px;font-size:12px;font-weight:800;cursor:pointer}.primary{background:var(--lime);color:#243300}.primary:hover{background:#b9e600}.outline{color:#4b626e;background:#fff;border:1px solid #cfd9de}.new-project{display:flex;align-items:center;justify-content:center;min-height:145px;border:1.5px dashed #b7c3c9;border-radius:9px;color:#607783;font-weight:800;font-size:13px;cursor:pointer;background:#fbfcfc}.new-project:hover{border-color:var(--lime);color:#587000}.market{margin-top:24px}.market-toolbar{padding:0 23px 18px;display:flex;gap:8px;flex-wrap:wrap}.filter{border:1px solid #d5dfe3;background:#fff;border-radius:20px;padding:7px 12px;font-size:12px;color:#4b626e;font-weight:700;cursor:pointer}.filter.active{background:#eff7ce;border-color:#a9d300;color:#516c00}.listing{border-top:1px solid var(--line);padding:17px 23px;display:flex;align-items:center;gap:14px}.listing-icon{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:20px;background:#edf2f4}.listing-body{flex:1;min-width:0}.listing h3{font-size:14px;margin:0 0 4px}.listing p{font-size:12px;color:var(--muted);margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.listing-meta{font-size:11px;color:#607783;margin-top:6px}.select-card{padding:22px}.select-card h2{font-size:17px;text-align:center;margin:2px 0 17px}.select-card hr{border:0;border-top:1px solid var(--line);margin:0 0 16px}.access-project{border:1px solid var(--line);border-radius:8px;padding:12px;margin:10px 0;cursor:pointer}.access-project.selected{border-color:var(--lime);box-shadow:0 0 0 2px #eff7ce}.access-project strong,.access-project span{display:block}.access-project strong{font-size:13px}.access-project span{margin-top:3px;font-size:11px;color:var(--muted)}.side-note{background:#e8eef1;border-radius:10px;padding:19px;margin-top:18px}.side-note h3{font-size:14px;margin:0 0 7px}.side-note p{font-size:12px;line-height:1.45;margin:0;color:#536771}.empty{grid-column:1/-1;text-align:center;padding:28px;color:var(--muted);font-size:13px}.modal-wrap{position:fixed;inset:0;background:rgba(18,39,51,.53);display:none;align-items:center;justify-content:center;padding:18px;z-index:10}.modal-wrap.show{display:flex}.modal{background:#fff;max-width:440px;width:100%;border-radius:13px;padding:25px;box-shadow:0 25px 55px rgba(0,0,0,.25)}.modal h2{margin:0 0 6px;font-size:20px}.modal p{color:var(--muted);font-size:13px;line-height:1.45}.modal label{display:block;font-size:12px;font-weight:800;margin:16px 0 6px}.modal input,.modal select{width:100%;border:1px solid #cbd6da;border-radius:7px;padding:10px 11px;font:inherit;font-size:13px}.modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:21px}.toast{position:fixed;bottom:20px;left:50%;transform:translate(-50%,90px);background:#263f4f;color:#fff;padding:11px 16px;border-radius:8px;font-size:13px;font-weight:700;box-shadow:var(--shadow);transition:transform .22s;z-index:20}.toast.show{transform:translate(-50%,0)}
+@media(max-width:800px){.nav{padding:0 16px;gap:15px}.nav-links{display:none}.user-name{display:none}.hero-inner{padding:33px 22px;min-height:205px}.hero h1{font-size:29px}.hero-art{display:none}.channel-inner{overflow:auto;padding:0 16px}.channel{min-width:116px}.wrap{padding:18px}.stats{grid-template-columns:1fr}.layout{grid-template-columns:1fr}.project-grid{grid-template-columns:1fr}.listing{align-items:flex-start}.listing .button{display:none}}
+</style>
+</head>
+<body class="auth-pending">
+<header class="top"><nav class="nav"><a class="brand" href="dashboard.html">tsl<span>Write</span></a><div class="nav-links"><button class="nav-link active">Dashboard</button><button class="nav-link" onclick="document.getElementById('marketplace').scrollIntoView({behavior:'smooth'})">Marketplace</button><button class="nav-link" onclick="document.getElementById('projects').scrollIntoView({behavior:'smooth'})">Projects</button><button class="nav-link" onclick="showToast('Learning resources are coming soon.')">Learning</button></div><div class="nav-actions"><button class="circle" title="Notifications" onclick="showToast('You are all caught up.')">♟</button><button class="circle" title="Messages" onclick="showToast('No new messages.')">✉</button><button class="user-menu" onclick="signOutUser()"><span class="avatar" id="avatar">T</span><span class="user-name" id="user-name">Your account</span><span>⌄</span></button></div></nav></header>
+<section class="hero"><div class="hero-inner"><div><div class="eyebrow">Your creative headquarters</div><h1>Turn great scripts into the next big story.</h1><p>Organize your drafts, invite trusted collaborators, and meet the people who can help your screenplay move forward.</p></div><div class="hero-art" aria-hidden="true"><div class="art-card"></div><div class="clapper"></div></div></div></section>
+<section class="channels"><div class="channel-inner"><button class="channel active" onclick="document.getElementById('projects').scrollIntoView({behavior:'smooth'})">My workspace<small>Scripts & access</small></button><button class="channel" onclick="setMarket('services',this)">Find talent<small>Editors & script doctors</small></button><button class="channel" onclick="setMarket('opportunities',this)">Opportunities<small>Jobs & open calls</small></button><button class="channel" onclick="setMarket('pitch',this)">Pitch & sell<small>Producers & agents</small></button></div></section>
+<main class="wrap"><section class="stats"><div class="stat"><div class="stat-icon">▤</div><div><strong id="script-count">0</strong><span>active scripts</span></div></div><div class="stat"><div class="stat-icon">✎</div><div><strong id="word-count">0</strong><span>words across drafts</span></div></div><div class="stat"><div class="stat-icon">♧</div><div><strong id="collab-count">0</strong><span>collaborators invited</span></div></div></section><div class="layout"><div><section class="section" id="projects"><div class="section-head"><div><h2>Your projects</h2><p>Open a draft or choose who can work on it.</p></div><button class="text-btn" onclick="openWriterNew()">+ New script</button></div><div class="project-grid" id="project-grid"></div></section><section class="section market" id="marketplace"><div class="section-head"><div><h2 id="market-title">Screenwriting marketplace</h2><p id="market-subtitle">Find people and opportunities for the next stage of your script.</p></div><button class="text-btn" onclick="showToast('Your saved marketplace items will appear here.')">Saved</button></div><div class="market-toolbar"><button class="filter active" onclick="setMarket('services',this)">Script services</button><button class="filter" onclick="setMarket('opportunities',this)">Hiring & opportunities</button><button class="filter" onclick="setMarket('pitch',this)">Pitch & sell</button></div><div id="listing-list"></div></section></div><aside><section class="section select-card"><h2>Project access</h2><hr><p style="text-align:center;margin:0 0 13px">Select a script, then choose how collaborators can participate.</p><div id="access-list"></div><button class="button primary" style="width:100%;margin-top:12px" onclick="openShare()">Invite collaborator</button></section><div class="side-note"><h3>How sharing works</h3><p>Invite a reader for feedback or an editor for active collaboration. Each invite is saved to the project’s access list.</p></div></aside></div></main>
+<div class="modal-wrap" id="share-modal" onclick="if(event.target===this)closeShare()"><div class="modal"><h2>Invite a collaborator</h2><p id="share-project-name">Choose how this person can participate in your script.</p><label for="share-email">Email address</label><input id="share-email" type="email" placeholder="collaborator@example.com"><label for="share-role">Access level</label><select id="share-role"><option value="editor">Can edit — write and revise the script</option><option value="viewer">Read-only — view and comment only</option></select><div class="modal-actions"><button class="button outline" onclick="closeShare()">Cancel</button><button class="button primary" onclick="saveInvite()">Save access</button></div></div></div><div class="toast" id="toast"></div>
+<script>
+const firebaseConfig={apiKey:"AIzaSyAQKZ7_ocuATRPWf6ljC8U4K0rCQKo3Um0",authDomain:"tslwrite.firebaseapp.com",projectId:"tslwrite",storageBucket:"tslwrite.firebasestorage.app",messagingSenderId:"395801581699",appId:"1:395801581699:web:ef82500d81fe379cffa3b6"};
+let auth,db,currentUser,projects=[],selectedProjectId=null,toastTimer;
+const market={services:{title:'Screenwriting marketplace',subtitle:'Find specialists to strengthen the next draft.',items:[['✦','Script doctor','Story diagnosis, structure notes, and actionable rewrite plans.','Script services · Remote'],['✎','Screenplay editor','Line editing and format polish for features and pilots.','Editing · Fast turnaround'],['◉','Pitch deck designer','Create a visual package that brings your screenplay to life.','Design · Film & TV']]},opportunities:{title:'Hiring & opportunities',subtitle:'Discover open roles, writing rooms, and production calls.',items:[['◫','Indie thriller seeking a screenwriter','Paid development role for a contained feature concept.','Hiring · Feature film'],['◌','Writers’ room — comedy pilot','Open call for writers with half-hour TV samples.','Open call · Television'],['⌁','Assistant script coordinator','Support a production team and learn the workflow.','Crew role · Hybrid']]},pitch:{title:'Pitch & sell',subtitle:'Prepare your script for producers, agents, and buyers.',items:[['▣','Independent film producers','Seeking character-led dramas under a $3M budget.','Producer brief · Accepting queries'],['◇','Representation clinic','Get your query, logline, and first ten pages reviewed.','Agent preparation · Mentorship'],['▱','Short-film showcase','Submit a finished short screenplay for a production match.','Submission · Short film']]}};
+market.services.title='Open film requests';
+market.services.subtitle='Browse briefs for script development, feedback, and creative support.';
+market.opportunities.title='Production & hiring requests';
+market.opportunities.subtitle='Find paid writing roles, crew calls, and production opportunities.';
+market.pitch.title='Pitch & representation calls';
+market.pitch.subtitle='See what producers, agents, and showcases are looking for.';
+function getLocalProjects(){try{return(JSON.parse(localStorage.getItem('scriptwriter_v2')||'{}').projects||[])}catch{return[]}}
+function getShares(){try{return JSON.parse(localStorage.getItem('tslwrite_share_preferences')||'{}')}catch{return{}}}
+function setShares(value){localStorage.setItem('tslwrite_share_preferences',JSON.stringify(value))}
+function wordCount(project){return(project.blocks||[]).reduce((total,block)=>total+(block.text||'').trim().split(/\s+/).filter(Boolean).length,0)}
+function formatName(value){return value.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}
+function displayProjects(){const grid=document.getElementById('project-grid'),access=document.getElementById('access-list'),shares=getShares();document.getElementById('script-count').textContent=projects.length;document.getElementById('word-count').textContent=projects.reduce((sum,p)=>sum+wordCount(p),0).toLocaleString();document.getElementById('collab-count').textContent=Object.values(shares).reduce((sum,list)=>sum+(list||[]).length,0);if(!projects.length){grid.innerHTML='<div class="empty">Your first screenplay starts here.</div>';access.innerHTML='<p class="empty" style="padding:10px">Create a script to manage access.</p>';return}if(!selectedProjectId||!projects.some(p=>p.id===selectedProjectId))selectedProjectId=projects[0].id;grid.innerHTML=projects.map(p=>`<article class="project"><div class="project-top"><div style="min-width:0"><h3>${escapeHtml(p.title||'Untitled Script')}</h3><p>${formatName(p.format||'screenplay')} · ${wordCount(p).toLocaleString()} words</p></div><span class="pill">${(shares[p.id]||[]).length?`${(shares[p.id]||[]).length} shared`:'Private'}</span></div><div class="project-actions"><button class="button primary" onclick="openWriter('${p.id}')">Open writer</button><button class="button outline" onclick="selectProject('${p.id}')">Share</button></div></article>`).join('')+'<button class="new-project" onclick="openWriterNew()">＋ Create a new script</button>';access.innerHTML=projects.map(p=>`<div class="access-project ${p.id===selectedProjectId?'selected':''}" onclick="selectProject('${p.id}')"><strong>${escapeHtml(p.title||'Untitled Script')}</strong><span>${(shares[p.id]||[]).length?`${(shares[p.id]||[]).length} collaborator${(shares[p.id]||[]).length===1?'':'s'}`:'Only you have access'}</span></div>`).join('')}
+function escapeHtml(value){return String(value||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function selectProject(id){selectedProjectId=id;displayProjects()}
+function openWriter(id){window.location.href='scriptwriter.html?project='+encodeURIComponent(id)}function openWriterNew(){window.location.href='scriptwriter.html?new=1'}
+function setMarket(key,button){const data=market[key];document.getElementById('market-title').textContent=data.title;document.getElementById('market-subtitle').textContent=data.subtitle;document.getElementById('listing-list').innerHTML=data.items.map(item=>`<article class="listing"><div class="listing-icon">${item[0]}</div><div class="listing-body"><h3>${item[1]}</h3><p>${item[2]}</p><div class="listing-meta">${item[3]}</div></div><button class="button outline" onclick="showToast('Added to your shortlist.')">Save</button></article>`).join('');document.querySelectorAll('.filter,.channel').forEach(el=>el.classList.remove('active'));document.querySelectorAll(`.filter[onclick*="${key}"],.channel[onclick*="${key}"]`).forEach(el=>el.classList.add('active'));if(button)button.classList.add('active')}
+function openShare(){if(!selectedProjectId)return showToast('Create a script first.');const project=projects.find(p=>p.id===selectedProjectId);document.getElementById('share-project-name').textContent=`Set access for “${project.title||'Untitled Script'}”.`;document.getElementById('share-modal').classList.add('show');document.getElementById('share-email').focus()}function closeShare(){document.getElementById('share-modal').classList.remove('show');document.getElementById('share-email').value=''}function saveInvite(){const email=document.getElementById('share-email').value.trim().toLowerCase(),role=document.getElementById('share-role').value;if(!/^\S+@\S+\.\S+$/.test(email))return showToast('Enter a valid collaborator email.');const shares=getShares(),list=shares[selectedProjectId]||[],existing=list.findIndex(invite=>invite.email===email);const invite={email,role};if(existing>=0)list[existing]=invite;else list.push(invite);shares[selectedProjectId]=list;setShares(shares);closeShare();displayProjects();showToast(role==='editor'?'Editor access saved.':'Read-only access saved.')}
+function showToast(message){const toast=document.getElementById('toast');toast.textContent=message;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),3000)}function signOutUser(){if(auth)auth.signOut().finally(()=>window.location.replace('index.html'))}
+async function loadProjects(){projects=getLocalProjects();displayProjects();try{const snapshot=await db.collection('users').doc(currentUser.uid).collection('projects').get();const all=new Map(projects.map(p=>[p.id,p]));snapshot.docs.forEach(doc=>all.set(doc.id,{...all.get(doc.id),...doc.data(),id:doc.id}));projects=[...all.values()].sort((a,b)=>(b.updated||0)-(a.updated||0));displayProjects()}catch(error){console.warn('Could not load cloud projects:',error)}}
+try{firebase.initializeApp(firebaseConfig);auth=firebase.auth();db=firebase.firestore();auth.onAuthStateChanged(user=>{if(!user){window.location.replace('index.html?reason=signin-required');return}currentUser=user;const name=user.displayName||user.email||'Your account';document.getElementById('user-name').textContent=name;document.getElementById('avatar').textContent=name.trim().charAt(0).toUpperCase()||'T';document.body.classList.remove('auth-pending');loadProjects()})}catch(error){console.warn('Firebase authentication failed:',error);window.location.replace('index.html?reason=signin-required')}setMarket('services');
+</script>
+<style>
+.project-options{margin-left:auto;position:relative}.project-options-btn{height:31px;width:31px;border:1px solid #cfd9de;background:#fff;border-radius:6px;color:#4b626e;font-size:19px;line-height:1;cursor:pointer}.project-options-btn:hover{border-color:#91b600;color:#506800}.project-actions .project-options-btn{margin-left:auto}.option-list{display:grid;gap:8px;margin-top:18px}.option-action{border:1px solid var(--line);border-radius:8px;background:#fff;padding:12px;text-align:left;color:#314753;font:inherit;font-size:13px;font-weight:800;cursor:pointer}.option-action:hover{border-color:var(--lime);background:#fbfdef}.option-action.danger{color:#b83c30}.option-action.danger:hover{border-color:#ef9a90;background:#fff6f5}.modal small{display:block;margin-top:3px;color:var(--muted);font-size:11px;font-weight:500}.setting-grid{display:grid;gap:12px}.setting-grid label{margin:0}.modal .project-meta{margin:0 0 16px}.settings-access{padding:11px 12px;background:#f3f6f7;border-radius:8px;color:#536771;font-size:12px;line-height:1.45}
+</style>
+<script>
+// Extend the project cards with management controls without changing the writer's data format.
+const renderDashboardProjects = displayProjects;
+displayProjects = function enhancedDisplayProjects() {
+  renderDashboardProjects();
+  document.querySelectorAll('#project-grid .project').forEach(card => {
+    const openButton = card.querySelector('button[onclick^="openWriter"]');
+    const match = openButton && openButton.getAttribute('onclick').match(/openWriter\('([^']+)'\)/);
+    if (!match) return;
+    const projectId = match[1];
+    const actions = card.querySelector('.project-actions');
+    if (!actions || actions.querySelector('.project-options-btn')) return;
+    const options = document.createElement('button');
+    options.className = 'project-options-btn';
+    options.type = 'button';
+    options.title = 'Project options';
+    options.setAttribute('aria-label', 'Project options');
+    options.textContent = '⋯';
+    options.onclick = () => openProjectOptions(projectId);
+    actions.appendChild(options);
+  });
+};
+
+function persistProjects() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('scriptwriter_v2') || '{}');
+    saved.projects = projects;
+    if (!projects.some(project => project.id === saved.currentProjectId)) {
+      saved.currentProjectId = projects[0]?.id || null;
+    }
+    localStorage.setItem('scriptwriter_v2', JSON.stringify(saved));
+  } catch (error) {
+    console.warn('Could not save project changes locally:', error);
+  }
+}
+
+async function syncProject(project) {
+  if (!db || !currentUser || !project) return;
+  try {
+    await db.collection('users').doc(currentUser.uid).collection('projects').doc(project.id).set({
+      ...project,
+      updated: Date.now(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, {merge: true});
+  } catch (error) {
+    console.warn('Could not sync project changes:', error);
+    showToast('Saved on this device. Cloud sync will retry later.');
+  }
+}
+
+function projectById(id) {
+  return projects.find(project => project.id === id);
+}
+
+function openProjectOptions(id) {
+  selectedProjectId = id;
+  const project = projectById(id);
+  if (!project) return;
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="modal-wrap show" id="project-options-modal" onclick="if(event.target===this)closeProjectOptions()">
+      <div class="modal">
+        <h2>${escapeHtml(project.title || 'Untitled Script')}</h2>
+        <p class="project-meta">Manage this project and its collaborators.</p>
+        <div class="option-list">
+          <button class="option-action" onclick="openProjectSettings('${project.id}')">Edit project details<small>Rename the script or change its format.</small></button>
+          <button class="option-action" onclick="openProjectSharing('${project.id}')">Sharing &amp; access<small>Invite collaborators as editors or read-only viewers.</small></button>
+          <button class="option-action danger" onclick="deleteDashboardProject('${project.id}')">Delete project<small>Permanently remove this script from your workspace.</small></button>
+        </div>
+        <div class="modal-actions"><button class="button outline" onclick="closeProjectOptions()">Close</button></div>
+      </div>
+    </div>`);
+}
+
+function closeProjectOptions() {
+  document.getElementById('project-options-modal')?.remove();
+}
+
+function openProjectSettings(id) {
+  const project = projectById(id);
+  if (!project) return;
+  closeProjectOptions();
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="modal-wrap show" id="project-settings-modal" onclick="if(event.target===this)closeProjectSettings()">
+      <div class="modal">
+        <h2>Project settings</h2>
+        <p>Update the details shown in your dashboard and writer.</p>
+        <div class="setting-grid">
+          <label>Project title<input id="settings-title" value="${escapeHtml(project.title || '')}" maxlength="100"></label>
+          <label>Format<select id="settings-format">
+            <option value="screenplay" ${project.format === 'screenplay' ? 'selected' : ''}>Screenplay (Film/TV)</option>
+            <option value="tv-pilot" ${project.format === 'tv-pilot' ? 'selected' : ''}>TV Pilot</option>
+            <option value="stage-play" ${project.format === 'stage-play' ? 'selected' : ''}>Stage Play</option>
+            <option value="short-film" ${project.format === 'short-film' ? 'selected' : ''}>Short Film</option>
+          </select></label>
+          <div class="settings-access">Use <strong>Sharing &amp; access</strong> to choose whether each collaborator can edit or only read the script.</div>
+        </div>
+        <div class="modal-actions"><button class="button outline" onclick="closeProjectSettings()">Cancel</button><button class="button primary" onclick="saveProjectSettings('${project.id}')">Save changes</button></div>
+      </div>
+    </div>`);
+  document.getElementById('settings-title').focus();
+}
+
+function closeProjectSettings() {
+  document.getElementById('project-settings-modal')?.remove();
+}
+
+async function saveProjectSettings(id) {
+  const project = projectById(id);
+  const title = document.getElementById('settings-title').value.trim();
+  if (!project || !title) return showToast('Give the project a title before saving.');
+  project.title = title;
+  project.format = document.getElementById('settings-format').value;
+  project.updated = Date.now();
+  persistProjects();
+  closeProjectSettings();
+  displayProjects();
+  await syncProject(project);
+  showToast('Project details saved.');
+}
+
+function openProjectSharing(id) {
+  selectedProjectId = id;
+  closeProjectOptions();
+  openShare();
+}
+
+async function deleteDashboardProject(id) {
+  const project = projectById(id);
+  if (!project || !confirm(`Delete “${project.title || 'Untitled Script'}”? This cannot be undone.`)) return;
+  projects = projects.filter(item => item.id !== id);
+  if (selectedProjectId === id) selectedProjectId = projects[0]?.id || null;
+  persistProjects();
+  closeProjectOptions();
+  displayProjects();
+  try {
+    if (db && currentUser) {
+      await db.collection('users').doc(currentUser.uid).collection('projects').doc(id).delete();
+    }
+    showToast('Project deleted.');
+  } catch (error) {
+    console.warn('Could not delete cloud project:', error);
+    showToast('Deleted on this device. Cloud deletion will retry later.');
+  }
+}
+</script>
+<style>
+/* Film-marketplace search view */
+.market-search{border:0;box-shadow:none;background:transparent}.market-search .section-head{padding:0 0 17px}.market-search h2{font-size:22px}.service-tabs{display:flex;gap:4px;overflow:auto;background:var(--navy);padding:0 16px;border-radius:10px 10px 0 0}.service-tab{min-width:118px;border:0;background:transparent;color:#dce6e9;padding:14px 9px 12px;font:inherit;font-size:12px;font-weight:800;cursor:pointer;position:relative}.service-tab.active{background:#fff;color:#263541;border-radius:8px 8px 0 0}.service-tab.active:after{content:"";position:absolute;left:14px;right:14px;top:0;height:3px;background:var(--lime)}.market-search-grid{display:grid;grid-template-columns:minmax(0,1fr) 295px;gap:20px;margin-top:17px}.refine-card,.shortlist-card,.pro-results{background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 2px 7px rgba(17,37,48,.04)}.refine-card{padding:19px;border-left:3px solid var(--lime);margin-bottom:16px}.refine-card h3{font-size:15px;margin:0 0 13px}.service-choice{display:flex;align-items:center;gap:8px;font-size:13px;color:#42535d;margin-bottom:14px}.service-check{display:grid;place-items:center;width:21px;height:21px;border-radius:4px;background:var(--lime);color:#fff;font-size:14px;font-weight:900}.filter-row{display:grid;grid-template-columns:1fr 1.25fr;gap:9px}.filter-row select,.filter-row input{min-width:0;width:100%;border:1px solid #cbd6da;border-radius:6px;padding:10px 11px;background:#fff;color:#42535d;font:inherit;font-size:13px}.pro-toolbar{padding:13px 17px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;font-weight:700}.pro-toolbar span{color:var(--muted);font-weight:500}.pro-card{padding:17px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:45px minmax(0,1fr) auto;gap:13px;align-items:start}.pro-card:last-child{border-bottom:0}.pro-avatar{width:43px;height:43px;border-radius:50%;display:grid;place-items:center;background:#dce8ec;color:#29495b;font-weight:900}.pro-name{font-size:15px;font-weight:850;margin:0 0 5px}.pro-role{font-size:12px;color:#61737e;margin-bottom:6px}.pro-bio{font-size:12px;line-height:1.45;color:#4c5c65}.pro-meta{font-size:11px;color:#72818a;margin-top:7px}.pro-select{white-space:nowrap}.shortlist-card{padding:19px;height:max-content;position:sticky;top:16px}.shortlist-card h3{text-align:center;margin:4px 0 13px;font-size:16px}.shortlist-card hr{border:0;border-top:1px solid var(--line);margin:0 0 12px}.short-empty{padding:9px 3px 13px;color:#86949b;font-size:12px;line-height:1.45;text-align:center}.short-pro{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid #edf0f1}.short-pro:last-of-type{border-bottom:0}.short-pro .pro-avatar{width:31px;height:31px;font-size:11px}.short-pro strong{font-size:12px;display:block}.short-pro span{font-size:11px;color:var(--muted);display:block;margin-top:2px}.short-remove{margin-left:auto;border:0;background:transparent;color:#87949a;font-size:16px;cursor:pointer}.quote-btn{width:100%;margin-top:14px;padding:12px;font-size:14px}.quote-btn:disabled{background:#d9e0e2;color:#829198;cursor:not-allowed}.market-note{font-size:11px;color:#7b8a91;line-height:1.4;margin:11px 0 0;text-align:center}@media(max-width:800px){.market-search-grid{grid-template-columns:1fr}.shortlist-card{position:static}.filter-row{grid-template-columns:1fr}.pro-card{grid-template-columns:39px minmax(0,1fr)}.pro-select{grid-column:2}.service-tab{min-width:104px}}
+</style>
+<script>
+// Replaces the compact list with a film-specific marketplace search and shortlist.
+const filmProfessionals = [
+  {id:'mara',name:'Mara Lin',initials:'ML',role:'Script editor & story consultant',service:'editing',genre:'Drama · Thriller',bio:'Feature and TV editor focused on structure, character arcs, and production-ready rewrites.',meta:'Los Angeles · Replies within 24h'},
+  {id:'diego',name:'Diego Álvarez',initials:'DA',role:'Pitch deck designer',service:'pitch',genre:'Sci-fi · Animation',bio:'Creates cinematic pitch decks, lookbooks, and series bibles for independent productions.',meta:'Madrid · 98% response rate'},
+  {id:'sanaa',name:'Sanaa Brooks',initials:'SB',role:'Development producer',service:'production',genre:'Comedy · Romance',bio:'Helps writers package projects, refine loglines, and prepare targeted producer submissions.',meta:'New York · Former studio development'},
+  {id:'james',name:'James Okoro',initials:'JO',role:'Screenplay legal & rights advisor',service:'rights',genre:'Drama · True story',bio:'Guidance on life rights, chain of title, option agreements, and independent production basics.',meta:'London · Entertainment law'},
+  {id:'harper',name:'Harper Quinn',initials:'HQ',role:'TV writer & script doctor',service:'editing',genre:'Crime · TV pilot',bio:'Story notes, pilot polish, and writers’ room preparation for character-led television.',meta:'Toronto · 12 years in television'}
+];
+let selectedProfessionals = [];
+let activeService = 'editing';
+
+function buildFilmMarketplace() {
+  const marketplace = document.getElementById('marketplace');
+  const projectsSection = document.getElementById('projects');
+  const layout = projectsSection.closest('.layout');
+  layout.style.gridTemplateColumns = '1fr';
+  layout.querySelector('aside').style.display = 'none';
+  marketplace.className = 'market-search';
+  marketplace.innerHTML = `
+    <div class="section-head"><div><h2>Meet screenwriting professionals</h2><p>Browse trusted specialists and request quotes for your film or television project.</p></div></div>
+    <div class="service-tabs" id="film-service-tabs">
+      <button class="service-tab active" onclick="setFilmService('editing',this)">✎ Script editing</button>
+      <button class="service-tab" onclick="setFilmService('development',this)">◎ Story development</button>
+      <button class="service-tab" onclick="setFilmService('pitch',this)">▣ Pitch materials</button>
+      <button class="service-tab" onclick="setFilmService('production',this)">◉ Production</button>
+      <button class="service-tab" onclick="setFilmService('rights',this)">◇ Rights & legal</button>
+    </div>
+    <div class="market-search-grid"><div>
+      <div class="refine-card"><h3>Find film professionals who specialize in:</h3><div class="service-choice"><span class="service-check">✓</span><span id="service-choice-label">Script editing</span></div><div class="filter-row"><select id="film-genre" onchange="renderFilmProfessionals()"><option value="">Any genre</option><option>Drama</option><option>Comedy</option><option>Thriller</option><option>Sci-fi</option><option>Animation</option><option>Television</option></select><input id="film-search" placeholder="Search by skill or keyword" oninput="renderFilmProfessionals()"></div></div>
+      <div class="pro-results"><div class="pro-toolbar"><div><strong id="pro-count">0</strong> professionals <span>available for new projects</span></div><button class="text-btn" onclick="selectedProfessionals=[];renderFilmProfessionals()">Clear shortlist</button></div><div id="film-pro-results"></div></div>
+    </div><aside class="shortlist-card"><h3>Select up to 5 professionals</h3><hr><div id="film-shortlist"></div><button class="button primary quote-btn" id="request-quotes" onclick="requestQuotes()" disabled>Request quotes</button><p class="market-note">Select professionals to send them your project brief.</p></aside></div>`;
+  layout.querySelector('div').insertBefore(marketplace, projectsSection);
+  document.querySelector('.eyebrow').textContent = 'tslWrite marketplace';
+  document.querySelector('.hero h1').textContent = 'Meet world-class screenwriting professionals.';
+  document.querySelector('.hero p').textContent = 'Find the editors, development producers, and creative partners who can help take your script to the screen.';
+  renderFilmProfessionals();
+}
+
+function setFilmService(service, button) {
+  activeService = service;
+  document.querySelectorAll('.service-tab').forEach(tab => tab.classList.remove('active'));
+  button.classList.add('active');
+  const labels = {editing:'Script editing',development:'Story development',pitch:'Pitch materials',production:'Production',rights:'Rights & legal'};
+  document.getElementById('service-choice-label').textContent = labels[service];
+  renderFilmProfessionals();
+}
+
+function renderFilmProfessionals() {
+  const keyword = (document.getElementById('film-search')?.value || '').toLowerCase();
+  const genre = document.getElementById('film-genre')?.value || '';
+  let visible = filmProfessionals.filter(pro => {
+    const text = `${pro.name} ${pro.role} ${pro.genre} ${pro.bio}`.toLowerCase();
+    const matchesService = activeService === 'development' ? ['editing','production'].includes(pro.service) : pro.service === activeService;
+    return matchesService && (!genre || text.includes(genre.toLowerCase())) && (!keyword || text.includes(keyword));
+  });
+  if (!visible.length) visible = filmProfessionals.filter(pro => !keyword || `${pro.name} ${pro.role} ${pro.genre}`.toLowerCase().includes(keyword));
+  document.getElementById('pro-count').textContent = visible.length;
+  document.getElementById('film-pro-results').innerHTML = visible.map(pro => {
+    const isSelected = selectedProfessionals.includes(pro.id);
+    return `<article class="pro-card"><div class="pro-avatar">${pro.initials}</div><div><h3 class="pro-name">${pro.name}</h3><div class="pro-role">${pro.role} · ${pro.genre}</div><div class="pro-bio">${pro.bio}</div><div class="pro-meta">${pro.meta}</div></div><button class="button ${isSelected ? 'primary' : 'outline'} pro-select" onclick="toggleProfessional('${pro.id}')">${isSelected ? 'Selected ✓' : 'Select'}</button></article>`;
+  }).join('');
+  const shortlist = selectedProfessionals.map(id => filmProfessionals.find(pro => pro.id === id)).filter(Boolean);
+  document.getElementById('film-shortlist').innerHTML = shortlist.length ? shortlist.map(pro => `<div class="short-pro"><div class="pro-avatar">${pro.initials}</div><div><strong>${pro.name}</strong><span>${pro.role}</span></div><button class="short-remove" title="Remove" onclick="toggleProfessional('${pro.id}')">×</button></div>`).join('') : '<div class="short-empty">Your selected professionals will appear here.</div>';
+  const requestButton = document.getElementById('request-quotes');
+  requestButton.disabled = !shortlist.length;
+  requestButton.textContent = shortlist.length ? `Request ${shortlist.length} quote${shortlist.length === 1 ? '' : 's'}` : 'Request quotes';
+}
+
+function toggleProfessional(id) {
+  if (selectedProfessionals.includes(id)) selectedProfessionals = selectedProfessionals.filter(item => item !== id);
+  else if (selectedProfessionals.length < 5) selectedProfessionals.push(id);
+  else return showToast('You can select up to five professionals.');
+  renderFilmProfessionals();
+}
+
+function requestQuotes() {
+  const names = selectedProfessionals.map(id => filmProfessionals.find(pro => pro.id === id)?.name).filter(Boolean);
+  showToast(`Your request brief is ready for ${names.join(', ')}.`);
+}
+
+buildFilmMarketplace();
+</script>
+<style>
+/* Books-style project library */
+.project-library-view{max-width:1060px;margin:0 auto}.project-library-view .section-head{padding:7px 0 22px;border-bottom:1px solid var(--line);margin-bottom:23px}.project-library-view .section-head h2{font-size:27px;letter-spacing:-.7px}.project-library-view .section-head p{font-size:14px}.library-actions{display:flex;gap:9px;align-items:center}.library-actions .button{padding:10px 14px}.library-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.script-library-card{background:#fff;border:1px solid #dde4e6;border-radius:10px;overflow:hidden;box-shadow:0 3px 10px rgba(20,46,60,.05);transition:transform .16s,box-shadow .16s}.script-library-card:hover{transform:translateY(-2px);box-shadow:0 9px 22px rgba(20,46,60,.11)}.script-cover{height:145px;padding:17px;color:#fff;position:relative;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}.script-cover:before{content:"";position:absolute;inset:0;background:linear-gradient(150deg,rgba(255,255,255,.18),transparent 40%,rgba(0,0,0,.2))}.script-cover:after{content:"FADE IN.";position:absolute;top:16px;left:17px;font:700 10px monospace;letter-spacing:1.5px;opacity:.72}.script-cover h3{position:relative;z-index:1;margin:0;font-size:20px;line-height:1.1;max-width:83%;word-break:break-word}.script-cover span{position:relative;z-index:1;margin-top:7px;font-size:11px;opacity:.78;text-transform:uppercase;font-weight:800;letter-spacing:.7px}.cover-one{background:linear-gradient(130deg,#295061,#173340)}.cover-two{background:linear-gradient(130deg,#72544b,#35252e)}.cover-three{background:linear-gradient(130deg,#376752,#193b37)}.cover-four{background:linear-gradient(130deg,#554170,#2d274e)}.cover-five{background:linear-gradient(130deg,#806439,#4d3d24)}.library-card-body{padding:15px}.library-meta{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#697983;margin-bottom:13px}.draft-status{color:#5c7900;background:#eef6c9;border-radius:20px;padding:4px 8px;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.45px}.library-progress{height:5px;background:#e4eaec;border-radius:4px;overflow:hidden;margin:8px 0 6px}.library-progress i{display:block;height:100%;background:var(--lime);border-radius:inherit}.library-progress-note{font-size:11px;color:#788790}.library-card-actions{display:flex;align-items:center;gap:8px;margin-top:15px}.library-card-actions .project-options-btn{margin-left:auto}.new-script-card{min-height:277px;background:#fbfcfc;border:1.5px dashed #b4c1c7;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#617984;cursor:pointer;border-radius:10px}.new-script-card:hover{border-color:var(--lime);background:#fefff7}.new-script-symbol{height:45px;width:45px;border:1px solid #b9c6cc;border-radius:50%;display:grid;place-items:center;font-size:25px;margin-bottom:10px}.new-script-card strong{font-size:14px}.new-script-card span{font-size:12px;margin-top:4px}.library-empty{grid-column:1/-1;padding:55px;text-align:center;border:1.5px dashed #b4c1c7;border-radius:10px;color:#6b7c86}.library-empty h3{color:#354d5b;margin:0 0 7px}.library-empty p{font-size:13px;margin:0 0 15px}@media(max-width:800px){.library-grid{grid-template-columns:1fr}.project-library-view .section-head{align-items:flex-start;flex-direction:column}.library-actions{width:100%}.library-actions .button{flex:1}}
+</style>
+<script>
+const renderDashboardProjectsWithOptions = displayProjects;
+const coverClasses = ['cover-one','cover-two','cover-three','cover-four','cover-five'];
+
+displayProjects = function renderProjectsLibrary() {
+  renderDashboardProjectsWithOptions();
+  const section = document.getElementById('projects');
+  if (!section) return;
+  section.classList.add('project-library-view');
+  section.querySelector('.section-head h2').textContent = 'My screenplays';
+  section.querySelector('.section-head p').textContent = 'Continue writing, manage your drafts, or start a new story.';
+  const head = section.querySelector('.section-head');
+  const oldNew = head.querySelector('.text-btn');
+  if (oldNew) oldNew.outerHTML = '<div class="library-actions"><button class="button outline" onclick="showToast(\'Import is coming soon.\')">Import script</button><button class="button primary" onclick="openWriterNew()">＋ New script</button></div>';
+  const grid = document.getElementById('project-grid');
+  if (!projects.length) {
+    grid.className = 'library-grid';
+    grid.innerHTML = '<div class="library-empty"><h3>Start your next screenplay</h3><p>Create a project to begin writing, sharing, and pitching your story.</p><button class="button primary" onclick="openWriterNew()">Create a script</button></div>';
+    return;
+  }
+  grid.className = 'library-grid';
+  grid.innerHTML = projects.map((project,index) => {
+    const words = wordCount(project);
+    const progress = Math.min(100, Math.round(words / 900));
+    const updated = project.updated ? new Date(project.updated).toLocaleDateString() : 'Recently created';
+    const format = formatName(project.format || 'screenplay');
+    return `<article class="script-library-card"><div class="script-cover ${coverClasses[index % coverClasses.length]}"><h3>${escapeHtml(project.title || 'Untitled Script')}</h3><span>${format}</span></div><div class="library-card-body"><div class="library-meta"><span>${words.toLocaleString()} words</span><span class="draft-status">Draft</span></div><div class="library-progress"><i style="width:${progress}%"></i></div><div class="library-progress-note">Last updated ${updated}</div><div class="library-card-actions"><button class="button primary" onclick="openWriter('${project.id}')">Continue</button><button class="button outline" onclick="openProjectSharing('${project.id}')">Share</button><button class="project-options-btn" title="Project options" aria-label="Project options" onclick="openProjectOptions('${project.id}')">⋯</button></div></div></article>`;
+  }).join('') + '<button class="new-script-card" onclick="openWriterNew()"><span class="new-script-symbol">＋</span><strong>New screenplay</strong><span>Start from a blank draft</span></button>';
+};
+
+function setActiveNavigation(index) {
+  document.querySelectorAll('.nav-links .nav-link').forEach((link,i) => link.classList.toggle('active', i === index));
+}
+
+function showProjectsLibrary() {
+  document.querySelector('.hero').style.display = 'none';
+  document.querySelector('.channels').style.display = 'none';
+  document.querySelector('.stats').style.display = 'none';
+  document.getElementById('marketplace').style.display = 'none';
+  document.querySelector('.wrap').style.paddingTop = '34px';
+  document.getElementById('projects').style.display = 'block';
+  setActiveNavigation(2);
+  displayProjects();
+  window.history.replaceState({}, '', 'dashboard.html?view=projects');
+}
+
+function showMarketplaceDashboard() {
+  document.querySelector('.hero').style.display = '';
+  document.querySelector('.channels').style.display = '';
+  document.querySelector('.stats').style.display = '';
+  document.getElementById('marketplace').style.display = '';
+  document.getElementById('projects').style.display = 'block';
+  document.querySelector('.wrap').style.paddingTop = '';
+  setActiveNavigation(1);
+  window.history.replaceState({}, '', 'dashboard.html');
+}
+
+const navigation = document.querySelectorAll('.nav-links .nav-link');
+navigation[0].onclick = showMarketplaceDashboard;
+navigation[1].onclick = showMarketplaceDashboard;
+navigation[2].onclick = showProjectsLibrary;
+document.querySelector('.channel-inner .channel').onclick = showProjectsLibrary;
+if (new URLSearchParams(window.location.search).get('view') === 'projects') showProjectsLibrary();
+</script>
+</body>
+</html>
