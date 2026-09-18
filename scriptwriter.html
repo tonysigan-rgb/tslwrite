@@ -136,8 +136,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* Typewriter mode */
 body.typewriter-mode .editor-area{scroll-behavior:smooth}
 
-/* Draft watermark */
-.script-page.watermark::after{content:'DRAFT';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:5in;font-family:'Courier New',monospace;font-weight:bold;color:rgba(0,0,0,.04);pointer-events:none;z-index:0;letter-spacing:.2em}
+/* Draft watermark (toggle) */
+.script-page.watermark::after{content:'DRAFT';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:3in;font-family:'Courier New',monospace;font-weight:bold;color:rgba(0,0,0,.06);pointer-events:none;z-index:0;letter-spacing:.2em}
+
+/* PDF export watermark */
+#pdf-watermark{display:none;position:fixed;inset:0;pointer-events:none;z-index:9999;align-items:center;justify-content:center;flex-direction:column;transform:rotate(-35deg);font-family:'Courier New',monospace;font-weight:bold;color:#000;text-align:center}
+#pdf-wm-title{font-size:2.5rem;text-transform:uppercase;letter-spacing:.08em;line-height:1.2;max-width:5.5in;word-break:break-word}
+#pdf-wm-author{font-size:1.5rem;margin-top:.4rem;max-width:5.5in;word-break:break-word}
+@media print{body.pdf-exporting #pdf-watermark{display:flex!important;opacity:.08}}
 
 /* Print: page numbers */
 @media print {
@@ -2764,7 +2770,16 @@ function exportFDX() {
 function exportPDF() {
   const proj = getProject();
   if (!proj) return alert('Open a script first.');
+  const title = proj.title || 'Untitled Script';
+  const author = (proj.cover && proj.cover.author) || '';
+  document.getElementById('pdf-wm-title').textContent = title;
+  document.getElementById('pdf-wm-author').textContent = author;
+  document.body.classList.add('pdf-exporting');
   window.print();
+  window.addEventListener('afterprint', function once() {
+    document.body.classList.remove('pdf-exporting');
+    window.removeEventListener('afterprint', once);
+  });
 }
 
 // ═══════════════════════════════════════════
@@ -3393,5 +3408,9 @@ function init() {
 
 init();
 </script>
+<div id="pdf-watermark">
+  <div id="pdf-wm-title"></div>
+  <div id="pdf-wm-author"></div>
+</div>
 </body>
 </html>
