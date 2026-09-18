@@ -230,9 +230,11 @@ body.typewriter-mode .editor-area{scroll-behavior:smooth}
   margin: 1in 1in 1in 1.5in;
 }
 @media print {
+  html,body{height:auto!important;overflow:visible!important}
+  .main{overflow:visible!important;height:auto!important;display:block!important}
   .toolbar,.sidebar,.right-panel,.statusbar,.editor-area > *:not(.script-page):not(.cover-page){display:none!important}
-  .editor-area{background:white!important;padding:0!important;overflow:visible!important;display:block!important}
-  .script-page{box-shadow:none!important;margin:0!important;padding:0!important;width:auto!important;border-radius:0!important}
+  .editor-area{background:white!important;padding:0!important;overflow:visible!important;height:auto!important;display:block!important}
+  .script-page{box-shadow:none!important;margin:0!important;padding:0!important;width:auto!important;border-radius:0!important;height:auto!important;overflow:visible!important}
   .script-block::after,.script-block:focus{background:none!important}
   .beat-view,.cards-view,.stats-view{display:none!important}
   .page-break-line{display:none!important}
