@@ -14,10 +14,9 @@
 </style>
 </head>
 <body class="auth-pending">
-<header class="top"><nav class="nav"><a class="brand" href="dashboard.html">tsl<span>Write</span></a><div class="nav-links"><button class="nav-link active">Dashboard</button><button class="nav-link" onclick="document.getElementById('marketplace').scrollIntoView({behavior:'smooth'})">Marketplace</button><button class="nav-link" onclick="document.getElementById('projects').scrollIntoView({behavior:'smooth'})">Projects</button><button class="nav-link" onclick="showToast('Learning resources are coming soon.')">Learning</button></div><div class="nav-actions"><button class="circle" title="Notifications" onclick="showToast('You are all caught up.')">♟</button><button class="circle" title="Messages" onclick="showToast('No new messages.')">✉</button><button class="user-menu" onclick="signOutUser()"><span class="avatar" id="avatar">T</span><span class="user-name" id="user-name">Your account</span><span>⌄</span></button></div></nav></header>
+<header class="top"><nav class="nav"><a class="brand" href="dashboard.html">tsl<span>Write</span></a><div class="nav-links"><button class="nav-link active">Dashboard</button><button class="nav-link" onclick="showProjectsLibrary()">Projects</button></div><div class="nav-actions"><button class="circle" title="Notifications" onclick="showToast('You are all caught up.')">♟</button><button class="circle" title="Messages" onclick="showToast('No new messages.')">✉</button><button class="user-menu" onclick="signOutUser()"><span class="avatar" id="avatar">T</span><span class="user-name" id="user-name">Your account</span><span>⌄</span></button></div></nav></header>
 <section class="hero"><div class="hero-inner"><div><div class="eyebrow">Your creative headquarters</div><h1>Turn great scripts into the next big story.</h1><p>Organize your drafts, invite trusted collaborators, and meet the people who can help your screenplay move forward.</p></div><div class="hero-art" aria-hidden="true"><div class="art-card"></div><div class="clapper"></div></div></div></section>
-<section class="channels"><div class="channel-inner"><button class="channel active" onclick="document.getElementById('projects').scrollIntoView({behavior:'smooth'})">My workspace<small>Scripts & access</small></button><button class="channel" onclick="setMarket('services',this)">Find talent<small>Editors & script doctors</small></button><button class="channel" onclick="setMarket('opportunities',this)">Opportunities<small>Jobs & open calls</small></button><button class="channel" onclick="setMarket('pitch',this)">Pitch & sell<small>Producers & agents</small></button></div></section>
-<main class="wrap"><section class="stats"><div class="stat"><div class="stat-icon">▤</div><div><strong id="script-count">0</strong><span>active scripts</span></div></div><div class="stat"><div class="stat-icon">✎</div><div><strong id="word-count">0</strong><span>words across drafts</span></div></div><div class="stat"><div class="stat-icon">♧</div><div><strong id="collab-count">0</strong><span>collaborators invited</span></div></div></section><div class="layout"><div><section class="section" id="projects"><div class="section-head"><div><h2>Your projects</h2><p>Open a draft or choose who can work on it.</p></div><button class="text-btn" onclick="openWriterNew()">+ New script</button></div><div class="project-grid" id="project-grid"></div></section><section class="section market" id="marketplace"><div class="section-head"><div><h2 id="market-title">Screenwriting marketplace</h2><p id="market-subtitle">Find people and opportunities for the next stage of your script.</p></div><button class="text-btn" onclick="showToast('Your saved marketplace items will appear here.')">Saved</button></div><div class="market-toolbar"><button class="filter active" onclick="setMarket('services',this)">Script services</button><button class="filter" onclick="setMarket('opportunities',this)">Hiring & opportunities</button><button class="filter" onclick="setMarket('pitch',this)">Pitch & sell</button></div><div id="listing-list"></div></section></div><aside><section class="section select-card"><h2>Project access</h2><hr><p style="text-align:center;margin:0 0 13px">Select a script, then choose how collaborators can participate.</p><div id="access-list"></div><button class="button primary" style="width:100%;margin-top:12px" onclick="openShare()">Invite collaborator</button></section><div class="side-note"><h3>How sharing works</h3><p>Invite a reader for feedback or an editor for active collaboration. Each invite is saved to the project’s access list.</p></div></aside></div></main>
+<main class="wrap"><section class="stats"><div class="stat"><div class="stat-icon">▤</div><div><strong id="script-count">0</strong><span>active scripts</span></div></div><div class="stat"><div class="stat-icon">✎</div><div><strong id="word-count">0</strong><span>words across drafts</span></div></div><div class="stat"><div class="stat-icon">♧</div><div><strong id="collab-count">0</strong><span>collaborators invited</span></div></div></section><div class="layout"><div><section class="section" id="projects"><div class="section-head"><div><h2>Your projects</h2><p>Open a draft or choose who can work on it.</p></div><button class="text-btn" onclick="openWriterNew()">+ New script</button></div><div class="project-grid" id="project-grid"></div></section></div><aside><section class="section select-card"><h2>Project access</h2><hr><p style="text-align:center;margin:0 0 13px">Select a script, then choose how collaborators can participate.</p><div id="access-list"></div><button class="button primary" style="width:100%;margin-top:12px" onclick="openShare()">Invite collaborator</button></section><div class="side-note"><h3>How sharing works</h3><p>Invite a reader for feedback or an editor for active collaboration. Each invite is saved to the project’s access list.</p></div></aside></div></main>
 <div class="modal-wrap" id="share-modal" onclick="if(event.target===this)closeShare()"><div class="modal"><h2>Invite a collaborator</h2><p id="share-project-name">Choose how this person can participate in your script.</p><label for="share-email">Email address</label><input id="share-email" type="email" placeholder="collaborator@example.com"><label for="share-role">Access level</label><select id="share-role"><option value="editor">Can edit — write and revise the script</option><option value="viewer">Read-only — view and comment only</option></select><div class="modal-actions"><button class="button outline" onclick="closeShare()">Cancel</button><button class="button primary" onclick="saveInvite()">Save access</button></div></div></div><div class="toast" id="toast"></div>
 <script>
 const firebaseConfig={apiKey:"AIzaSyAQKZ7_ocuATRPWf6ljC8U4K0rCQKo3Um0",authDomain:"tslwrite.firebaseapp.com",projectId:"tslwrite",storageBucket:"tslwrite.firebasestorage.app",messagingSenderId:"395801581699",appId:"1:395801581699:web:ef82500d81fe379cffa3b6"};
@@ -277,7 +276,7 @@ function requestQuotes() {
   showToast(`Your request brief is ready for ${names.join(', ')}.`);
 }
 
-buildFilmMarketplace();
+// buildFilmMarketplace removed — marketplace section deleted
 </script>
 <style>
 /* Books-style project library */
@@ -319,32 +318,26 @@ function setActiveNavigation(index) {
 
 function showProjectsLibrary() {
   document.querySelector('.hero').style.display = 'none';
-  document.querySelector('.channels').style.display = 'none';
   document.querySelector('.stats').style.display = 'none';
-  document.getElementById('marketplace').style.display = 'none';
   document.querySelector('.wrap').style.paddingTop = '34px';
   document.getElementById('projects').style.display = 'block';
-  setActiveNavigation(2);
+  setActiveNavigation(1);
   displayProjects();
   window.history.replaceState({}, '', 'dashboard.html?view=projects');
 }
 
 function showMarketplaceDashboard() {
   document.querySelector('.hero').style.display = '';
-  document.querySelector('.channels').style.display = '';
   document.querySelector('.stats').style.display = '';
-  document.getElementById('marketplace').style.display = '';
   document.getElementById('projects').style.display = 'block';
   document.querySelector('.wrap').style.paddingTop = '';
-  setActiveNavigation(1);
+  setActiveNavigation(0);
   window.history.replaceState({}, '', 'dashboard.html');
 }
 
 const navigation = document.querySelectorAll('.nav-links .nav-link');
 navigation[0].onclick = showMarketplaceDashboard;
-navigation[1].onclick = showMarketplaceDashboard;
-navigation[2].onclick = showProjectsLibrary;
-document.querySelector('.channel-inner .channel').onclick = showProjectsLibrary;
+navigation[1].onclick = showProjectsLibrary;
 if (new URLSearchParams(window.location.search).get('view') === 'projects') showProjectsLibrary();
 </script>
 </body>
