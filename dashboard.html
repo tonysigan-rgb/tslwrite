@@ -112,6 +112,7 @@ function openProjectOptions(id) {
         <div class="option-list">
           <button class="option-action" onclick="openProjectSettings('${project.id}')">Edit project details<small>Rename the script or change its format.</small></button>
           <button class="option-action" onclick="openProjectSharing('${project.id}')">Sharing &amp; access<small>Invite collaborators as editors or read-only viewers.</small></button>
+          <button class="option-action" onclick="openAddToFolderModal('${project.id}')">Add to folder<small>Organize this script into a collection.</small></button>
           <button class="option-action danger" onclick="deleteDashboardProject('${project.id}')">Delete project<small>Permanently remove this script from your workspace.</small></button>
         </div>
         <div class="modal-actions"><button class="button outline" onclick="closeProjectOptions()">Close</button></div>
@@ -278,38 +279,163 @@ function requestQuotes() {
 
 // buildFilmMarketplace removed — marketplace section deleted
 </script>
+<script>
+/* Folder management */
+let folders = [];
+let activeFolderId = null;
+
+const _origLoadProjects = loadProjects;
+loadProjects = async function loadProjectsWithFolders() {
+  await _origLoadProjects();
+  if (db && currentUser) {
+    try {
+      const snap = await db.collection('users').doc(currentUser.uid).collection('folders').get();
+      folders = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch(e) { folders = []; }
+    displayProjects();
+  }
+};
+
+function openAddToFolderModal(projectId) {
+  closeProjectOptions();
+  const project = projectById(projectId);
+  if (!project) return;
+  const currentFolder = project.folderId || null;
+  const folderItems = folders.map(f =>
+    `<button class="folder-pick-item" onclick="assignToFolder('${projectId}','${f.id}')">`
+    + `<span style="font-size:1.1rem;flex-shrink:0">📁</span>${escapeHtml(f.name)}`
+    + (currentFolder === f.id ? ' <span style="margin-left:auto;color:var(--lime);font-size:16px">✓</span>' : '')
+    + `</button>`
+  ).join('');
+  const removeBtn = currentFolder
+    ? `<button class="folder-pick-item" style="color:#b83c30;border-color:#f0c0bb" onclick="removeFromFolder('${projectId}')"><span style="font-size:1.1rem;flex-shrink:0">✕</span>Remove from folder</button>`
+    : '';
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="modal-wrap show" id="folder-modal" onclick="if(event.target===this)closeFolderModal()">
+      <div class="modal">
+        <h2>Add to folder</h2>
+        <p>Organize <strong>${escapeHtml(project.title || 'this script')}</strong> into a collection.</p>
+        <div class="folder-picker">
+          ${folderItems || '<p style="font-size:13px;color:var(--muted);margin:4px 0 2px">No folders yet. Create one below.</p>'}
+          ${removeBtn}
+        </div>
+        <div class="new-folder-row">
+          <input id="new-folder-name" placeholder="New folder name…" maxlength="60" onkeydown="if(event.key==='Enter')createFolderAndAssign('${projectId}')">
+          <button class="button primary" onclick="createFolderAndAssign('${projectId}')">Create</button>
+        </div>
+        <div class="modal-actions"><button class="button outline" onclick="closeFolderModal()">Cancel</button></div>
+      </div>
+    </div>`);
+  document.getElementById('new-folder-name').focus();
+}
+
+function closeFolderModal() {
+  document.getElementById('folder-modal')?.remove();
+}
+
+async function createFolderAndAssign(projectId) {
+  const nameInput = document.getElementById('new-folder-name');
+  const name = nameInput.value.trim();
+  if (!name) { nameInput.focus(); return; }
+  const folderColors = ['fc-blue','fc-green','fc-red','fc-purple','fc-amber'];
+  const folder = { id: 'folder_' + Date.now(), name, color: folderColors[folders.length % folderColors.length], created: Date.now() };
+  folders.push(folder);
+  if (db && currentUser) {
+    try { await db.collection('users').doc(currentUser.uid).collection('folders').doc(folder.id).set(folder); }
+    catch(e) { console.warn('Could not save folder:', e); }
+  }
+  await assignToFolder(projectId, folder.id);
+}
+
+async function assignToFolder(projectId, folderId) {
+  const project = projectById(projectId);
+  if (!project) return;
+  project.folderId = folderId;
+  project.updated = Date.now();
+  persistProjects();
+  closeFolderModal();
+  displayProjects();
+  await syncProject(project);
+  const folder = folders.find(f => f.id === folderId);
+  showToast('Added to "' + (folder ? folder.name : 'folder') + '".');
+}
+
+async function removeFromFolder(projectId) {
+  const project = projectById(projectId);
+  if (!project) return;
+  delete project.folderId;
+  project.updated = Date.now();
+  persistProjects();
+  closeFolderModal();
+  displayProjects();
+  await syncProject(project);
+  showToast('Removed from folder.');
+}
+</script>
 <style>
 /* Books-style project library */
 .project-library-view{max-width:1060px;margin:0 auto}.project-library-view .section-head{padding:7px 20px 22px;border-bottom:1px solid var(--line);margin-bottom:23px}.project-library-view .section-head h2{font-size:27px;letter-spacing:-.7px}.project-library-view .section-head p{font-size:14px}.library-actions{display:flex;gap:9px;align-items:center}.library-actions .button{padding:10px 14px}.library-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.script-library-card{background:#fff;border:1px solid #dde4e6;border-radius:10px;overflow:hidden;box-shadow:0 3px 10px rgba(20,46,60,.05);transition:transform .16s,box-shadow .16s}.script-library-card:hover{transform:translateY(-2px);box-shadow:0 9px 22px rgba(20,46,60,.11)}.script-cover{height:145px;padding:17px;color:#fff;position:relative;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}.script-cover:before{content:"";position:absolute;inset:0;background:linear-gradient(150deg,rgba(255,255,255,.18),transparent 40%,rgba(0,0,0,.2))}.script-cover:after{content:"FADE IN.";position:absolute;top:16px;left:17px;font:700 10px monospace;letter-spacing:1.5px;opacity:.72}.script-cover h3{position:relative;z-index:1;margin:0;font-size:20px;line-height:1.1;max-width:83%;word-break:break-word}.script-cover span{position:relative;z-index:1;margin-top:7px;font-size:11px;opacity:.78;text-transform:uppercase;font-weight:800;letter-spacing:.7px}.cover-one{background:linear-gradient(130deg,#295061,#173340)}.cover-two{background:linear-gradient(130deg,#72544b,#35252e)}.cover-three{background:linear-gradient(130deg,#376752,#193b37)}.cover-four{background:linear-gradient(130deg,#554170,#2d274e)}.cover-five{background:linear-gradient(130deg,#806439,#4d3d24)}.library-card-body{padding:15px}.library-meta{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#697983;margin-bottom:13px}.draft-status{color:#5c7900;background:#eef6c9;border-radius:20px;padding:4px 8px;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.45px}.library-progress{height:5px;background:#e4eaec;border-radius:4px;overflow:hidden;margin:8px 0 6px}.library-progress i{display:block;height:100%;background:var(--lime);border-radius:inherit}.library-progress-note{font-size:11px;color:#788790}.library-card-actions{display:flex;align-items:center;gap:8px;margin-top:15px}.library-card-actions .project-options-btn{margin-left:auto}.new-script-card{min-height:277px;background:#fbfcfc;border:1.5px dashed #b4c1c7;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#617984;cursor:pointer;border-radius:10px}.new-script-card:hover{border-color:var(--lime);background:#fefff7}.new-script-symbol{height:45px;width:45px;border:1px solid #b9c6cc;border-radius:50%;display:grid;place-items:center;font-size:25px;margin-bottom:10px}.new-script-card strong{font-size:14px}.new-script-card span{font-size:12px;margin-top:4px}.library-empty{grid-column:1/-1;padding:55px;text-align:center;border:1.5px dashed #b4c1c7;border-radius:10px;color:#6b7c86}.library-empty h3{color:#354d5b;margin:0 0 7px}.library-empty p{font-size:13px;margin:0 0 15px}@media(max-width:800px){.library-grid{grid-template-columns:1fr}.project-library-view .section-head{align-items:flex-start;flex-direction:column}.library-actions{width:100%}.library-actions .button{flex:1}}
+.folder-card{background:#fff;border:1px solid #dde4e6;border-radius:10px;overflow:hidden;cursor:pointer;transition:transform .16s,box-shadow .16s;box-shadow:0 3px 10px rgba(20,46,60,.05)}.folder-card:hover{transform:translateY(-2px);box-shadow:0 9px 22px rgba(20,46,60,.11)}.folder-cover{height:80px;display:flex;align-items:center;padding:16px 20px}.fc-blue{background:linear-gradient(130deg,#295061,#173340)}.fc-green{background:linear-gradient(130deg,#376752,#193b37)}.fc-red{background:linear-gradient(130deg,#72544b,#35252e)}.fc-purple{background:linear-gradient(130deg,#554170,#2d274e)}.fc-amber{background:linear-gradient(130deg,#806439,#4d3d24)}.folder-body{padding:14px 16px}.folder-body strong{display:block;font-size:14px;font-weight:800;color:#1a2e3a}.folder-body span{font-size:12px;color:#697983;margin-top:2px;display:block}.folder-picker{display:grid;gap:8px;margin-top:12px;max-height:200px;overflow-y:auto}.folder-pick-item{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:#fff;cursor:pointer;text-align:left;font:inherit;font-size:13px;font-weight:700;color:#314753;width:100%}.folder-pick-item:hover{border-color:var(--lime);background:#fbfdef}.new-folder-row{display:flex;gap:8px;margin-top:12px}.new-folder-row input{flex:1;border:1px solid #cbd6da;border-radius:7px;padding:9px 10px;font:inherit;font-size:13px}.library-section-label{grid-column:1/-1;font-size:11px;font-weight:800;color:#8a9ba3;letter-spacing:.9px;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid var(--line)}
 </style>
 <script>
 const renderDashboardProjectsWithOptions = displayProjects;
 const coverClasses = ['cover-one','cover-two','cover-three','cover-four','cover-five'];
+
+function renderScriptCard(project, index) {
+  const words = wordCount(project);
+  const progress = Math.min(100, Math.round(words / 900));
+  const updated = project.updated ? new Date(project.updated).toLocaleDateString() : 'Recently created';
+  const format = formatName(project.format || 'screenplay');
+  return `<article class="script-library-card"><div class="script-cover ${coverClasses[index % coverClasses.length]}"><h3>${escapeHtml(project.title || 'Untitled Script')}</h3><span>${format}</span></div><div class="library-card-body"><div class="library-meta"><span>${words.toLocaleString()} words</span><span class="draft-status">Draft</span></div><div class="library-progress"><i style="width:${progress}%"></i></div><div class="library-progress-note">Last updated ${updated}</div><div class="library-card-actions"><button class="button primary" onclick="openWriter('${project.id}')">Continue</button><button class="button outline" onclick="openProjectSharing('${project.id}')">Share</button><button class="project-options-btn" title="Project options" aria-label="Project options" onclick="openProjectOptions('${project.id}')">⋯</button></div></div></article>`;
+}
 
 displayProjects = function renderProjectsLibrary() {
   renderDashboardProjectsWithOptions();
   const section = document.getElementById('projects');
   if (!section) return;
   section.classList.add('project-library-view');
-  section.querySelector('.section-head h2').textContent = 'My screenplays';
-  section.querySelector('.section-head p').textContent = 'Continue writing, manage your drafts, or start a new story.';
+  const activeFolder = activeFolderId ? folders.find(f => f.id === activeFolderId) : null;
+  section.querySelector('.section-head h2').textContent = activeFolder ? activeFolder.name : 'My screenplays';
+  section.querySelector('.section-head p').textContent = activeFolder ? 'Scripts in this folder.' : 'Continue writing, manage your drafts, or start a new story.';
   const head = section.querySelector('.section-head');
   const oldNew = head.querySelector('.text-btn');
-  if (oldNew) oldNew.outerHTML = '<div class="library-actions"><button class="button outline" onclick="showToast(\'Import is coming soon.\')">Import script</button><button class="button primary" onclick="openWriterNew()">＋ New script</button></div>';
+  if (oldNew) {
+    const leftBtn = activeFolder
+      ? `<button class="button outline" onclick="activeFolderId=null;displayProjects()">← All scripts</button>`
+      : `<button class="button outline" onclick="showToast('Import is coming soon.')">Import script</button>`;
+    oldNew.outerHTML = `<div class="library-actions">${leftBtn}<button class="button primary" onclick="openWriterNew()">＋ New script</button></div>`;
+  }
   const grid = document.getElementById('project-grid');
-  if (!projects.length) {
-    grid.className = 'library-grid';
+  grid.className = 'library-grid';
+
+  if (activeFolder) {
+    const folderProjects = projects.filter(p => p.folderId === activeFolderId);
+    if (!folderProjects.length) {
+      grid.innerHTML = '<div class="library-empty"><h3>No scripts here yet</h3><p>Use the ⋯ menu on any script to add it to this folder.</p></div>';
+      return;
+    }
+    grid.innerHTML = folderProjects.map((p, i) => renderScriptCard(p, i)).join('') + '<button class="new-script-card" onclick="openWriterNew()"><span class="new-script-symbol">＋</span><strong>New screenplay</strong><span>Start from a blank draft</span></button>';
+    return;
+  }
+
+  if (!projects.length && !folders.length) {
     grid.innerHTML = '<div class="library-empty"><h3>Start your next screenplay</h3><p>Create a project to begin writing, sharing, and pitching your story.</p><button class="button primary" onclick="openWriterNew()">Create a script</button></div>';
     return;
   }
-  grid.className = 'library-grid';
-  grid.innerHTML = projects.map((project,index) => {
-    const words = wordCount(project);
-    const progress = Math.min(100, Math.round(words / 900));
-    const updated = project.updated ? new Date(project.updated).toLocaleDateString() : 'Recently created';
-    const format = formatName(project.format || 'screenplay');
-    return `<article class="script-library-card"><div class="script-cover ${coverClasses[index % coverClasses.length]}"><h3>${escapeHtml(project.title || 'Untitled Script')}</h3><span>${format}</span></div><div class="library-card-body"><div class="library-meta"><span>${words.toLocaleString()} words</span><span class="draft-status">Draft</span></div><div class="library-progress"><i style="width:${progress}%"></i></div><div class="library-progress-note">Last updated ${updated}</div><div class="library-card-actions"><button class="button primary" onclick="openWriter('${project.id}')">Continue</button><button class="button outline" onclick="openProjectSharing('${project.id}')">Share</button><button class="project-options-btn" title="Project options" aria-label="Project options" onclick="openProjectOptions('${project.id}')">⋯</button></div></div></article>`;
-  }).join('') + '<button class="new-script-card" onclick="openWriterNew()"><span class="new-script-symbol">＋</span><strong>New screenplay</strong><span>Start from a blank draft</span></button>';
+
+  let html = '';
+  if (folders.length) {
+    html += '<div class="library-section-label">Folders</div>';
+    html += folders.map(f => {
+      const count = projects.filter(p => p.folderId === f.id).length;
+      return `<div class="folder-card" onclick="activeFolderId='${f.id}';displayProjects()"><div class="folder-cover ${f.color}"><span style="font-size:2rem">📁</span></div><div class="folder-body"><strong>${escapeHtml(f.name)}</strong><span>${count} script${count === 1 ? '' : 's'}</span></div></div>`;
+    }).join('');
+  }
+  const ungrouped = projects.filter(p => !p.folderId);
+  if (folders.length && ungrouped.length) html += '<div class="library-section-label">Scripts</div>';
+  html += ungrouped.map((p, i) => renderScriptCard(p, i)).join('');
+  html += '<button class="new-script-card" onclick="openWriterNew()"><span class="new-script-symbol">＋</span><strong>New screenplay</strong><span>Start from a blank draft</span></button>';
+  grid.innerHTML = html;
 };
 
 function setActiveNavigation(index) {
