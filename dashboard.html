@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>tslWrite â€” Dashboard</title>
+<title>tslWrite — Dashboard</title>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -14,14 +14,14 @@
 </style>
 </head>
 <body class="auth-pending">
-<header class="top"><nav class="nav"><a class="brand" href="dashboard.html">tsl<span>Write</span></a><div class="nav-links"><button class="nav-link active">Dashboard</button><button class="nav-link" onclick="showProjectsLibrary()">Projects</button></div><div class="nav-actions"><button class="circle" title="Notifications" onclick="showToast('You are all caught up.')">â™Ÿ</button><button class="circle" title="Messages" onclick="showToast('No new messages.')">âœ‰</button><button class="user-menu" onclick="signOutUser()"><span class="avatar" id="avatar">T</span><span class="user-name" id="user-name">Your account</span><span>âŒ„</span></button></div></nav></header>
+<header class="top"><nav class="nav"><a class="brand" href="dashboard.html">tsl<span>Write</span></a><div class="nav-links"><button class="nav-link active">Dashboard</button><button class="nav-link" onclick="showProjectsLibrary()">Projects</button></div><div class="nav-actions"><button class="circle" title="Notifications" onclick="showToast('You are all caught up.')">♟</button><button class="circle" title="Messages" onclick="showToast('No new messages.')">✉</button><button class="user-menu" onclick="signOutUser()"><span class="avatar" id="avatar">T</span><span class="user-name" id="user-name">Your account</span><span>⌄</span></button></div></nav></header>
 <section class="hero"><div class="hero-inner"><div><div class="eyebrow">Your creative headquarters</div><h1>Turn great scripts into the next big story.</h1><p>Organize your drafts, invite trusted collaborators, and meet the people who can help your screenplay move forward.</p></div><div class="hero-art" aria-hidden="true"><div class="art-card"></div><div class="clapper"></div></div></div></section>
-<main class="wrap"><section class="stats"><div class="stat"><div class="stat-icon">â–¤</div><div><strong id="script-count">0</strong><span>active scripts</span></div></div><div class="stat"><div class="stat-icon">âœŽ</div><div><strong id="word-count">0</strong><span>words across drafts</span></div></div><div class="stat"><div class="stat-icon">â™§</div><div><strong id="collab-count">0</strong><span>collaborators invited</span></div></div></section><div class="layout"><div><section class="section" id="projects"><div class="section-head"><div><h2>Your projects</h2><p>Open a draft or choose who can work on it.</p></div><button class="text-btn" onclick="openWriterNew()">+ New script</button></div><div class="project-grid" id="project-grid"></div></section></div><aside><section class="section select-card"><h2>Project access</h2><hr><p style="text-align:center;margin:0 0 13px">Select a script, then choose how collaborators can participate.</p><div id="access-list"></div><button class="button primary" style="width:100%;margin-top:12px" onclick="openShare()">Invite collaborator</button></section><div class="side-note"><h3>How sharing works</h3><p>Invite a reader for feedback or an editor for active collaboration. Each invite is saved to the projectâ€™s access list.</p></div></aside></div></main>
-<div class="modal-wrap" id="share-modal" onclick="if(event.target===this)closeShare()"><div class="modal"><h2>Invite a collaborator</h2><p id="share-project-name">Choose how this person can participate in your script.</p><label for="share-email">Email address</label><input id="share-email" type="email" placeholder="collaborator@example.com"><label for="share-role">Access level</label><select id="share-role"><option value="editor">Can edit â€” write and revise the script</option><option value="viewer">Read-only â€” view and comment only</option></select><div class="modal-actions"><button class="button outline" onclick="closeShare()">Cancel</button><button class="button primary" onclick="saveInvite()">Save access</button></div></div></div><div class="toast" id="toast"></div>
+<main class="wrap"><section class="stats"><div class="stat"><div class="stat-icon">▤</div><div><strong id="script-count">0</strong><span>active scripts</span></div></div><div class="stat"><div class="stat-icon">✎</div><div><strong id="word-count">0</strong><span>words across drafts</span></div></div><div class="stat"><div class="stat-icon">♧</div><div><strong id="collab-count">0</strong><span>collaborators invited</span></div></div></section><div class="layout"><div><section class="section" id="projects"><div class="section-head"><div><h2>Your projects</h2><p>Open a draft or choose who can work on it.</p></div><button class="text-btn" onclick="openWriterNew()">+ New script</button></div><div class="project-grid" id="project-grid"></div></section></div><aside><section class="section select-card"><h2>Project access</h2><hr><p style="text-align:center;margin:0 0 13px">Select a script, then choose how collaborators can participate.</p><div id="access-list"></div><button class="button primary" style="width:100%;margin-top:12px" onclick="openShare()">Invite collaborator</button></section><div class="side-note"><h3>How sharing works</h3><p>Invite a reader for feedback or an editor for active collaboration. Each invite is saved to the project’s access list.</p></div></aside></div></main>
+<div class="modal-wrap" id="share-modal" onclick="if(event.target===this)closeShare()"><div class="modal"><h2>Invite a collaborator</h2><p id="share-project-name">Choose how this person can participate in your script.</p><label for="share-email">Email address</label><input id="share-email" type="email" placeholder="collaborator@example.com"><label for="share-role">Access level</label><select id="share-role"><option value="editor">Can edit — write and revise the script</option><option value="viewer">Read-only — view and comment only</option></select><div class="modal-actions"><button class="button outline" onclick="closeShare()">Cancel</button><button class="button primary" onclick="saveInvite()">Save access</button></div></div></div><div class="toast" id="toast"></div>
 <script>
 const firebaseConfig={apiKey:"AIzaSyAQKZ7_ocuATRPWf6ljC8U4K0rCQKo3Um0",authDomain:"tslwrite.firebaseapp.com",projectId:"tslwrite",storageBucket:"tslwrite.firebasestorage.app",messagingSenderId:"395801581699",appId:"1:395801581699:web:ef82500d81fe379cffa3b6"};
 let auth,db,currentUser,projects=[],selectedProjectId=null,toastTimer;
-const market={services:{title:'Screenwriting marketplace',subtitle:'Find specialists to strengthen the next draft.',items:[['âœ¦','Script doctor','Story diagnosis, structure notes, and actionable rewrite plans.','Script services Â· Remote'],['âœŽ','Screenplay editor','Line editing and format polish for features and pilots.','Editing Â· Fast turnaround'],['â—‰','Pitch deck designer','Create a visual package that brings your screenplay to life.','Design Â· Film & TV']]},opportunities:{title:'Hiring & opportunities',subtitle:'Discover open roles, writing rooms, and production calls.',items:[['â—«','Indie thriller seeking a screenwriter','Paid development role for a contained feature concept.','Hiring Â· Feature film'],['â—Œ','Writersâ€™ room â€” comedy pilot','Open call for writers with half-hour TV samples.','Open call Â· Television'],['âŒ','Assistant script coordinator','Support a production team and learn the workflow.','Crew role Â· Hybrid']]},pitch:{title:'Pitch & sell',subtitle:'Prepare your script for producers, agents, and buyers.',items:[['â–£','Independent film producers','Seeking character-led dramas under a $3M budget.','Producer brief Â· Accepting queries'],['â—‡','Representation clinic','Get your query, logline, and first ten pages reviewed.','Agent preparation Â· Mentorship'],['â–±','Short-film showcase','Submit a finished short screenplay for a production match.','Submission Â· Short film']]}};
+const market={services:{title:'Screenwriting marketplace',subtitle:'Find specialists to strengthen the next draft.',items:[['✦','Script doctor','Story diagnosis, structure notes, and actionable rewrite plans.','Script services · Remote'],['✎','Screenplay editor','Line editing and format polish for features and pilots.','Editing · Fast turnaround'],['◉','Pitch deck designer','Create a visual package that brings your screenplay to life.','Design · Film & TV']]},opportunities:{title:'Hiring & opportunities',subtitle:'Discover open roles, writing rooms, and production calls.',items:[['◫','Indie thriller seeking a screenwriter','Paid development role for a contained feature concept.','Hiring · Feature film'],['◌','Writers’ room — comedy pilot','Open call for writers with half-hour TV samples.','Open call · Television'],['⌁','Assistant script coordinator','Support a production team and learn the workflow.','Crew role · Hybrid']]},pitch:{title:'Pitch & sell',subtitle:'Prepare your script for producers, agents, and buyers.',items:[['▣','Independent film producers','Seeking character-led dramas under a $3M budget.','Producer brief · Accepting queries'],['◇','Representation clinic','Get your query, logline, and first ten pages reviewed.','Agent preparation · Mentorship'],['▱','Short-film showcase','Submit a finished short screenplay for a production match.','Submission · Short film']]}};
 market.services.title='Open film requests';
 market.services.subtitle='Browse briefs for script development, feedback, and creative support.';
 market.opportunities.title='Production & hiring requests';
@@ -33,12 +33,12 @@ function getShares(){try{return JSON.parse(localStorage.getItem('tslwrite_share_
 function setShares(value){localStorage.setItem('tslwrite_share_preferences',JSON.stringify(value))}
 function wordCount(project){return(project.blocks||[]).reduce((total,block)=>total+(block.text||'').trim().split(/\s+/).filter(Boolean).length,0)}
 function formatName(value){return value.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}
-function displayProjects(){const grid=document.getElementById('project-grid'),access=document.getElementById('access-list'),shares=getShares();document.getElementById('script-count').textContent=projects.length;document.getElementById('word-count').textContent=projects.reduce((sum,p)=>sum+wordCount(p),0).toLocaleString();document.getElementById('collab-count').textContent=Object.values(shares).reduce((sum,list)=>sum+(list||[]).length,0);if(!projects.length){grid.innerHTML='<div class="empty">Your first screenplay starts here.</div>';access.innerHTML='<p class="empty" style="padding:10px">Create a script to manage access.</p>';return}if(!selectedProjectId||!projects.some(p=>p.id===selectedProjectId))selectedProjectId=projects[0].id;grid.innerHTML=projects.map(p=>`<article class="project"><div class="project-top"><div style="min-width:0"><h3>${escapeHtml(p.title||'Untitled Script')}</h3><p>${formatName(p.format||'screenplay')} Â· ${wordCount(p).toLocaleString()} words</p></div><span class="pill">${(shares[p.id]||[]).length?`${(shares[p.id]||[]).length} shared`:'Private'}</span></div><div class="project-actions"><button class="button primary" onclick="openWriter('${p.id}')">Open writer</button><button class="button outline" onclick="selectProject('${p.id}')">Share</button></div></article>`).join('')+'<button class="new-project" onclick="openWriterNew()">ï¼‹ Create a new script</button>';access.innerHTML=projects.map(p=>`<div class="access-project ${p.id===selectedProjectId?'selected':''}" onclick="selectProject('${p.id}')"><strong>${escapeHtml(p.title||'Untitled Script')}</strong><span>${(shares[p.id]||[]).length?`${(shares[p.id]||[]).length} collaborator${(shares[p.id]||[]).length===1?'':'s'}`:'Only you have access'}</span></div>`).join('')}
+function displayProjects(){const grid=document.getElementById('project-grid'),access=document.getElementById('access-list'),shares=getShares();document.getElementById('script-count').textContent=projects.length;document.getElementById('word-count').textContent=projects.reduce((sum,p)=>sum+wordCount(p),0).toLocaleString();document.getElementById('collab-count').textContent=Object.values(shares).reduce((sum,list)=>sum+(list||[]).length,0);if(!projects.length){grid.innerHTML='<div class="empty">Your first screenplay starts here.</div>';access.innerHTML='<p class="empty" style="padding:10px">Create a script to manage access.</p>';return}if(!selectedProjectId||!projects.some(p=>p.id===selectedProjectId))selectedProjectId=projects[0].id;grid.innerHTML=projects.map(p=>`<article class="project"><div class="project-top"><div style="min-width:0"><h3>${escapeHtml(p.title||'Untitled Script')}</h3><p>${formatName(p.format||'screenplay')} · ${wordCount(p).toLocaleString()} words</p></div><span class="pill">${(shares[p.id]||[]).length?`${(shares[p.id]||[]).length} shared`:'Private'}</span></div><div class="project-actions"><button class="button primary" onclick="openWriter('${p.id}')">Open writer</button><button class="button outline" onclick="selectProject('${p.id}')">Share</button></div></article>`).join('')+'<button class="new-project" onclick="openWriterNew()">＋ Create a new script</button>';access.innerHTML=projects.map(p=>`<div class="access-project ${p.id===selectedProjectId?'selected':''}" onclick="selectProject('${p.id}')"><strong>${escapeHtml(p.title||'Untitled Script')}</strong><span>${(shares[p.id]||[]).length?`${(shares[p.id]||[]).length} collaborator${(shares[p.id]||[]).length===1?'':'s'}`:'Only you have access'}</span></div>`).join('')}
 function escapeHtml(value){return String(value||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function selectProject(id){selectedProjectId=id;displayProjects()}
 function openWriter(id){window.location.href='scriptwriter.html?project='+encodeURIComponent(id)}function openWriterNew(){window.location.href='scriptwriter.html?new=1'}
 function setMarket(key,button){const data=market[key];document.getElementById('market-title').textContent=data.title;document.getElementById('market-subtitle').textContent=data.subtitle;document.getElementById('listing-list').innerHTML=data.items.map(item=>`<article class="listing"><div class="listing-icon">${item[0]}</div><div class="listing-body"><h3>${item[1]}</h3><p>${item[2]}</p><div class="listing-meta">${item[3]}</div></div><button class="button outline" onclick="showToast('Added to your shortlist.')">Save</button></article>`).join('');document.querySelectorAll('.filter,.channel').forEach(el=>el.classList.remove('active'));document.querySelectorAll(`.filter[onclick*="${key}"],.channel[onclick*="${key}"]`).forEach(el=>el.classList.add('active'));if(button)button.classList.add('active')}
-function openShare(){if(!selectedProjectId)return showToast('Create a script first.');const project=projects.find(p=>p.id===selectedProjectId);document.getElementById('share-project-name').textContent=`Set access for â€œ${project.title||'Untitled Script'}â€.`;document.getElementById('share-modal').classList.add('show');document.getElementById('share-email').focus()}function closeShare(){document.getElementById('share-modal').classList.remove('show');document.getElementById('share-email').value=''}function saveInvite(){const email=document.getElementById('share-email').value.trim().toLowerCase(),role=document.getElementById('share-role').value;if(!/^\S+@\S+\.\S+$/.test(email))return showToast('Enter a valid collaborator email.');const shares=getShares(),list=shares[selectedProjectId]||[],existing=list.findIndex(invite=>invite.email===email);const invite={email,role};if(existing>=0)list[existing]=invite;else list.push(invite);shares[selectedProjectId]=list;setShares(shares);closeShare();displayProjects();showToast(role==='editor'?'Editor access saved.':'Read-only access saved.')}
+function openShare(){if(!selectedProjectId)return showToast('Create a script first.');const project=projects.find(p=>p.id===selectedProjectId);document.getElementById('share-project-name').textContent=`Set access for “${project.title||'Untitled Script'}”.`;document.getElementById('share-modal').classList.add('show');document.getElementById('share-email').focus()}function closeShare(){document.getElementById('share-modal').classList.remove('show');document.getElementById('share-email').value=''}function saveInvite(){const email=document.getElementById('share-email').value.trim().toLowerCase(),role=document.getElementById('share-role').value;if(!/^\S+@\S+\.\S+$/.test(email))return showToast('Enter a valid collaborator email.');const shares=getShares(),list=shares[selectedProjectId]||[],existing=list.findIndex(invite=>invite.email===email);const invite={email,role};if(existing>=0)list[existing]=invite;else list.push(invite);shares[selectedProjectId]=list;setShares(shares);closeShare();displayProjects();showToast(role==='editor'?'Editor access saved.':'Read-only access saved.')}
 function showToast(message){const toast=document.getElementById('toast');toast.textContent=message;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),3000)}function signOutUser(){if(auth)auth.signOut().finally(()=>window.location.replace('index.html'))}
 async function loadProjects(){projects=getLocalProjects();displayProjects();try{const snapshot=await db.collection('users').doc(currentUser.uid).collection('projects').get();const all=new Map(projects.map(p=>[p.id,p]));snapshot.docs.forEach(doc=>all.set(doc.id,{...all.get(doc.id),...doc.data(),id:doc.id}));projects=[...all.values()].sort((a,b)=>(b.updated||0)-(a.updated||0));displayProjects()}catch(error){console.warn('Could not load cloud projects:',error)}}
 try{firebase.initializeApp(firebaseConfig);auth=firebase.auth();db=firebase.firestore();auth.onAuthStateChanged(user=>{if(!user){window.location.replace('index.html?reason=signin-required');return}currentUser=user;const name=user.displayName||user.email||'Your account';document.getElementById('user-name').textContent=name;document.getElementById('avatar').textContent=name.trim().charAt(0).toUpperCase()||'T';document.body.classList.remove('auth-pending');loadProjects()})}catch(error){console.warn('Firebase authentication failed:',error);window.location.replace('index.html?reason=signin-required')}setMarket('services');
@@ -63,7 +63,7 @@ displayProjects = function enhancedDisplayProjects() {
     options.type = 'button';
     options.title = 'Project options';
     options.setAttribute('aria-label', 'Project options');
-    options.textContent = 'â‹¯';
+    options.textContent = '⋯';
     options.onclick = () => openProjectOptions(projectId);
     actions.appendChild(options);
   });
@@ -175,7 +175,7 @@ function openProjectSharing(id) {
 
 async function deleteDashboardProject(id) {
   const project = projectById(id);
-  if (!project || !confirm(`Delete â€œ${project.title || 'Untitled Script'}â€? This cannot be undone.`)) return;
+  if (!project || !confirm(`Delete “${project.title || 'Untitled Script'}”? This cannot be undone.`)) return;
   projects = projects.filter(item => item.id !== id);
   if (selectedProjectId === id) selectedProjectId = projects[0]?.id || null;
   persistProjects();
@@ -199,11 +199,11 @@ async function deleteDashboardProject(id) {
 <script>
 // Replaces the compact list with a film-specific marketplace search and shortlist.
 const filmProfessionals = [
-  {id:'mara',name:'Mara Lin',initials:'ML',role:'Script editor & story consultant',service:'editing',genre:'Drama Â· Thriller',bio:'Feature and TV editor focused on structure, character arcs, and production-ready rewrites.',meta:'Los Angeles Â· Replies within 24h'},
-  {id:'diego',name:'Diego Ãlvarez',initials:'DA',role:'Pitch deck designer',service:'pitch',genre:'Sci-fi Â· Animation',bio:'Creates cinematic pitch decks, lookbooks, and series bibles for independent productions.',meta:'Madrid Â· 98% response rate'},
-  {id:'sanaa',name:'Sanaa Brooks',initials:'SB',role:'Development producer',service:'production',genre:'Comedy Â· Romance',bio:'Helps writers package projects, refine loglines, and prepare targeted producer submissions.',meta:'New York Â· Former studio development'},
-  {id:'james',name:'James Okoro',initials:'JO',role:'Screenplay legal & rights advisor',service:'rights',genre:'Drama Â· True story',bio:'Guidance on life rights, chain of title, option agreements, and independent production basics.',meta:'London Â· Entertainment law'},
-  {id:'harper',name:'Harper Quinn',initials:'HQ',role:'TV writer & script doctor',service:'editing',genre:'Crime Â· TV pilot',bio:'Story notes, pilot polish, and writersâ€™ room preparation for character-led television.',meta:'Toronto Â· 12 years in television'}
+  {id:'mara',name:'Mara Lin',initials:'ML',role:'Script editor & story consultant',service:'editing',genre:'Drama · Thriller',bio:'Feature and TV editor focused on structure, character arcs, and production-ready rewrites.',meta:'Los Angeles · Replies within 24h'},
+  {id:'diego',name:'Diego Álvarez',initials:'DA',role:'Pitch deck designer',service:'pitch',genre:'Sci-fi · Animation',bio:'Creates cinematic pitch decks, lookbooks, and series bibles for independent productions.',meta:'Madrid · 98% response rate'},
+  {id:'sanaa',name:'Sanaa Brooks',initials:'SB',role:'Development producer',service:'production',genre:'Comedy · Romance',bio:'Helps writers package projects, refine loglines, and prepare targeted producer submissions.',meta:'New York · Former studio development'},
+  {id:'james',name:'James Okoro',initials:'JO',role:'Screenplay legal & rights advisor',service:'rights',genre:'Drama · True story',bio:'Guidance on life rights, chain of title, option agreements, and independent production basics.',meta:'London · Entertainment law'},
+  {id:'harper',name:'Harper Quinn',initials:'HQ',role:'TV writer & script doctor',service:'editing',genre:'Crime · TV pilot',bio:'Story notes, pilot polish, and writers’ room preparation for character-led television.',meta:'Toronto · 12 years in television'}
 ];
 let selectedProfessionals = [];
 let activeService = 'editing';
@@ -218,14 +218,14 @@ function buildFilmMarketplace() {
   marketplace.innerHTML = `
     <div class="section-head"><div><h2>Meet screenwriting professionals</h2><p>Browse trusted specialists and request quotes for your film or television project.</p></div></div>
     <div class="service-tabs" id="film-service-tabs">
-      <button class="service-tab active" onclick="setFilmService('editing',this)">âœŽ Script editing</button>
-      <button class="service-tab" onclick="setFilmService('development',this)">â—Ž Story development</button>
-      <button class="service-tab" onclick="setFilmService('pitch',this)">â–£ Pitch materials</button>
-      <button class="service-tab" onclick="setFilmService('production',this)">â—‰ Production</button>
-      <button class="service-tab" onclick="setFilmService('rights',this)">â—‡ Rights & legal</button>
+      <button class="service-tab active" onclick="setFilmService('editing',this)">✎ Script editing</button>
+      <button class="service-tab" onclick="setFilmService('development',this)">◎ Story development</button>
+      <button class="service-tab" onclick="setFilmService('pitch',this)">▣ Pitch materials</button>
+      <button class="service-tab" onclick="setFilmService('production',this)">◉ Production</button>
+      <button class="service-tab" onclick="setFilmService('rights',this)">◇ Rights & legal</button>
     </div>
     <div class="market-search-grid"><div>
-      <div class="refine-card"><h3>Find film professionals who specialize in:</h3><div class="service-choice"><span class="service-check">âœ“</span><span id="service-choice-label">Script editing</span></div><div class="filter-row"><select id="film-genre" onchange="renderFilmProfessionals()"><option value="">Any genre</option><option>Drama</option><option>Comedy</option><option>Thriller</option><option>Sci-fi</option><option>Animation</option><option>Television</option></select><input id="film-search" placeholder="Search by skill or keyword" oninput="renderFilmProfessionals()"></div></div>
+      <div class="refine-card"><h3>Find film professionals who specialize in:</h3><div class="service-choice"><span class="service-check">✓</span><span id="service-choice-label">Script editing</span></div><div class="filter-row"><select id="film-genre" onchange="renderFilmProfessionals()"><option value="">Any genre</option><option>Drama</option><option>Comedy</option><option>Thriller</option><option>Sci-fi</option><option>Animation</option><option>Television</option></select><input id="film-search" placeholder="Search by skill or keyword" oninput="renderFilmProfessionals()"></div></div>
       <div class="pro-results"><div class="pro-toolbar"><div><strong id="pro-count">0</strong> professionals <span>available for new projects</span></div><button class="text-btn" onclick="selectedProfessionals=[];renderFilmProfessionals()">Clear shortlist</button></div><div id="film-pro-results"></div></div>
     </div><aside class="shortlist-card"><h3>Select up to 5 professionals</h3><hr><div id="film-shortlist"></div><button class="button primary quote-btn" id="request-quotes" onclick="requestQuotes()" disabled>Request quotes</button><p class="market-note">Select professionals to send them your project brief.</p></aside></div>`;
   layout.querySelector('div').insertBefore(marketplace, projectsSection);
@@ -256,10 +256,10 @@ function renderFilmProfessionals() {
   document.getElementById('pro-count').textContent = visible.length;
   document.getElementById('film-pro-results').innerHTML = visible.map(pro => {
     const isSelected = selectedProfessionals.includes(pro.id);
-    return `<article class="pro-card"><div class="pro-avatar">${pro.initials}</div><div><h3 class="pro-name">${pro.name}</h3><div class="pro-role">${pro.role} Â· ${pro.genre}</div><div class="pro-bio">${pro.bio}</div><div class="pro-meta">${pro.meta}</div></div><button class="button ${isSelected ? 'primary' : 'outline'} pro-select" onclick="toggleProfessional('${pro.id}')">${isSelected ? 'Selected âœ“' : 'Select'}</button></article>`;
+    return `<article class="pro-card"><div class="pro-avatar">${pro.initials}</div><div><h3 class="pro-name">${pro.name}</h3><div class="pro-role">${pro.role} · ${pro.genre}</div><div class="pro-bio">${pro.bio}</div><div class="pro-meta">${pro.meta}</div></div><button class="button ${isSelected ? 'primary' : 'outline'} pro-select" onclick="toggleProfessional('${pro.id}')">${isSelected ? 'Selected ✓' : 'Select'}</button></article>`;
   }).join('');
   const shortlist = selectedProfessionals.map(id => filmProfessionals.find(pro => pro.id === id)).filter(Boolean);
-  document.getElementById('film-shortlist').innerHTML = shortlist.length ? shortlist.map(pro => `<div class="short-pro"><div class="pro-avatar">${pro.initials}</div><div><strong>${pro.name}</strong><span>${pro.role}</span></div><button class="short-remove" title="Remove" onclick="toggleProfessional('${pro.id}')">Ã—</button></div>`).join('') : '<div class="short-empty">Your selected professionals will appear here.</div>';
+  document.getElementById('film-shortlist').innerHTML = shortlist.length ? shortlist.map(pro => `<div class="short-pro"><div class="pro-avatar">${pro.initials}</div><div><strong>${pro.name}</strong><span>${pro.role}</span></div><button class="short-remove" title="Remove" onclick="toggleProfessional('${pro.id}')">×</button></div>`).join('') : '<div class="short-empty">Your selected professionals will appear here.</div>';
   const requestButton = document.getElementById('request-quotes');
   requestButton.disabled = !shortlist.length;
   requestButton.textContent = shortlist.length ? `Request ${shortlist.length} quote${shortlist.length === 1 ? '' : 's'}` : 'Request quotes';
@@ -277,7 +277,7 @@ function requestQuotes() {
   showToast(`Your request brief is ready for ${names.join(', ')}.`);
 }
 
-// buildFilmMarketplace removed â€” marketplace section deleted
+// buildFilmMarketplace removed — marketplace section deleted
 </script>
 <script>
 /* Folder management */
@@ -303,12 +303,12 @@ function openAddToFolderModal(projectId) {
   const currentFolder = project.folderId || null;
   const folderItems = folders.map(f =>
     `<button class="folder-pick-item" onclick="assignToFolder('${projectId}','${f.id}')">`
-    + `<span style="font-size:1.1rem;flex-shrink:0">ðŸ“</span>${escapeHtml(f.name)}`
-    + (currentFolder === f.id ? ' <span style="margin-left:auto;color:var(--lime);font-size:16px">âœ“</span>' : '')
+    + `<span style="font-size:1.1rem;flex-shrink:0">📁</span>${escapeHtml(f.name)}`
+    + (currentFolder === f.id ? ' <span style="margin-left:auto;color:var(--lime);font-size:16px">✓</span>' : '')
     + `</button>`
   ).join('');
   const removeBtn = currentFolder
-    ? `<button class="folder-pick-item" style="color:#b83c30;border-color:#f0c0bb" onclick="removeFromFolder('${projectId}')"><span style="font-size:1.1rem;flex-shrink:0">âœ•</span>Remove from folder</button>`
+    ? `<button class="folder-pick-item" style="color:#b83c30;border-color:#f0c0bb" onclick="removeFromFolder('${projectId}')"><span style="font-size:1.1rem;flex-shrink:0">✕</span>Remove from folder</button>`
     : '';
   document.body.insertAdjacentHTML('beforeend', `
     <div class="modal-wrap show" id="folder-modal" onclick="if(event.target===this)closeFolderModal()">
@@ -320,7 +320,7 @@ function openAddToFolderModal(projectId) {
           ${removeBtn}
         </div>
         <div class="new-folder-row">
-          <input id="new-folder-name" placeholder="New folder nameâ€¦" maxlength="60" onkeydown="if(event.key==='Enter')createFolderAndAssign('${projectId}')">
+          <input id="new-folder-name" placeholder="New folder name…" maxlength="60" onkeydown="if(event.key==='Enter')createFolderAndAssign('${projectId}')">
           <button class="button primary" onclick="createFolderAndAssign('${projectId}')">Create</button>
         </div>
         <div class="modal-actions"><button class="button outline" onclick="closeFolderModal()">Cancel</button></div>
@@ -383,7 +383,7 @@ function openFolderOptions(folderId) {
         <p class="project-meta">Manage this folder.</p>
         <div class="option-list">
           <button class="option-action" onclick="toggleArchiveFolder('${folderId}')">${isArchived ? 'Unarchive folder' : 'Archive folder'}<small>${isArchived ? 'Move back to active folders.' : 'Hide this folder without deleting it.'}</small></button>
-          <button class="option-action danger" onclick="deleteFolderById('${folderId}')">Delete folder<small>Remove the folder â€” scripts inside will stay in your library.</small></button>
+          <button class="option-action danger" onclick="deleteFolderById('${folderId}')">Delete folder<small>Remove the folder — scripts inside will stay in your library.</small></button>
         </div>
         <div class="modal-actions"><button class="button outline" onclick="closeFolderOptions()">Close</button></div>
       </div>
@@ -437,7 +437,7 @@ function renderScriptCard(project, index) {
   const progress = Math.min(100, Math.round(words / 900));
   const updated = project.updated ? new Date(project.updated).toLocaleDateString() : 'Recently created';
   const format = formatName(project.format || 'screenplay');
-  return `<article class="script-library-card"><div class="script-cover ${coverClasses[index % coverClasses.length]}"><h3>${escapeHtml(project.title || 'Untitled Script')}</h3><span>${format}</span></div><div class="library-card-body"><div class="library-meta"><span>${words.toLocaleString()} words</span><span class="draft-status">Draft</span></div><div class="library-progress"><i style="width:${progress}%"></i></div><div class="library-progress-note">Last updated ${updated}</div><div class="library-card-actions"><button class="button primary" onclick="openWriter('${project.id}')">Continue</button><button class="button outline" onclick="openProjectSharing('${project.id}')">Share</button><button class="project-options-btn" title="Project options" aria-label="Project options" onclick="openProjectOptions('${project.id}')">â‹¯</button></div></div></article>`;
+  return `<article class="script-library-card"><div class="script-cover ${coverClasses[index % coverClasses.length]}"><h3>${escapeHtml(project.title || 'Untitled Script')}</h3><span>${format}</span></div><div class="library-card-body"><div class="library-meta"><span>${words.toLocaleString()} words</span><span class="draft-status">Draft</span></div><div class="library-progress"><i style="width:${progress}%"></i></div><div class="library-progress-note">Last updated ${updated}</div><div class="library-card-actions"><button class="button primary" onclick="openWriter('${project.id}')">Continue</button><button class="button outline" onclick="openProjectSharing('${project.id}')">Share</button><button class="project-options-btn" title="Project options" aria-label="Project options" onclick="openProjectOptions('${project.id}')">⋯</button></div></div></article>`;
 }
 
 displayProjects = function renderProjectsLibrary() {
@@ -452,9 +452,9 @@ displayProjects = function renderProjectsLibrary() {
   const oldNew = head.querySelector('.text-btn');
   if (oldNew) {
     const leftBtn = activeFolder
-      ? `<button class="button outline" onclick="activeFolderId=null;displayProjects()">â† All scripts</button>`
+      ? `<button class="button outline" onclick="activeFolderId=null;displayProjects()">← All scripts</button>`
       : `<button class="button outline" onclick="showToast('Import is coming soon.')">Import script</button>`;
-    oldNew.outerHTML = `<div class="library-actions">${leftBtn}<button class="button primary" onclick="openWriterNew()">ï¼‹ New script</button></div>`;
+    oldNew.outerHTML = `<div class="library-actions">${leftBtn}<button class="button primary" onclick="openWriterNew()">＋ New script</button></div>`;
   }
   const grid = document.getElementById('project-grid');
   grid.className = 'library-grid';
@@ -462,10 +462,10 @@ displayProjects = function renderProjectsLibrary() {
   if (activeFolder) {
     const folderProjects = projects.filter(p => p.folderId === activeFolderId);
     if (!folderProjects.length) {
-      grid.innerHTML = '<div class="library-empty"><h3>No scripts here yet</h3><p>Use the â‹¯ menu on any script to add it to this folder.</p></div>';
+      grid.innerHTML = '<div class="library-empty"><h3>No scripts here yet</h3><p>Use the ⋯ menu on any script to add it to this folder.</p></div>';
       return;
     }
-    grid.innerHTML = folderProjects.map((p, i) => renderScriptCard(p, i)).join('') + '<button class="new-script-card" onclick="openWriterNew()"><span class="new-script-symbol">ï¼‹</span><strong>New screenplay</strong><span>Start from a blank draft</span></button>';
+    grid.innerHTML = folderProjects.map((p, i) => renderScriptCard(p, i)).join('') + '<button class="new-script-card" onclick="openWriterNew()"><span class="new-script-symbol">＋</span><strong>New screenplay</strong><span>Start from a blank draft</span></button>';
     return;
   }
 
@@ -481,20 +481,20 @@ displayProjects = function renderProjectsLibrary() {
     html += '<div class="library-section-label">Folders</div>';
     html += activeFolders.map(f => {
       const count = projects.filter(p => p.folderId === f.id).length;
-      return `<div class="folder-card" onclick="activeFolderId='${f.id}';displayProjects()"><div class="folder-cover ${f.color}"><span style="font-size:2rem">ðŸ“</span></div><div class="folder-body"><div class="folder-body-row"><div><strong>${escapeHtml(f.name)}</strong><span>${count} script${count === 1 ? '' : 's'}</span></div><button class="project-options-btn folder-options-btn" title="Folder options" onclick="event.stopPropagation();openFolderOptions('${f.id}')">â‹¯</button></div></div></div>`;
+      return `<div class="folder-card" onclick="activeFolderId='${f.id}';displayProjects()"><div class="folder-cover ${f.color}"><span style="font-size:2rem">📁</span></div><div class="folder-body"><div class="folder-body-row"><div><strong>${escapeHtml(f.name)}</strong><span>${count} script${count === 1 ? '' : 's'}</span></div><button class="project-options-btn folder-options-btn" title="Folder options" onclick="event.stopPropagation();openFolderOptions('${f.id}')">⋯</button></div></div></div>`;
     }).join('');
   }
   if (archivedFolders.length) {
     html += '<div class="library-section-label">Archived folders</div>';
     html += archivedFolders.map(f => {
       const count = projects.filter(p => p.folderId === f.id).length;
-      return `<div class="folder-card archived" onclick="activeFolderId='${f.id}';displayProjects()"><div class="folder-cover ${f.color}"><span style="font-size:2rem">ðŸ“</span></div><div class="folder-body"><div class="folder-body-row"><div><strong>${escapeHtml(f.name)}</strong><span>${count} script${count === 1 ? '' : 's'}</span></div><button class="project-options-btn folder-options-btn" title="Folder options" onclick="event.stopPropagation();openFolderOptions('${f.id}')">â‹¯</button></div></div></div>`;
+      return `<div class="folder-card archived" onclick="activeFolderId='${f.id}';displayProjects()"><div class="folder-cover ${f.color}"><span style="font-size:2rem">📁</span></div><div class="folder-body"><div class="folder-body-row"><div><strong>${escapeHtml(f.name)}</strong><span>${count} script${count === 1 ? '' : 's'}</span></div><button class="project-options-btn folder-options-btn" title="Folder options" onclick="event.stopPropagation();openFolderOptions('${f.id}')">⋯</button></div></div></div>`;
     }).join('');
   }
   const ungrouped = projects.filter(p => !p.folderId);
   if ((activeFolders.length || archivedFolders.length) && ungrouped.length) html += '<div class="library-section-label">Scripts</div>';
   html += ungrouped.map((p, i) => renderScriptCard(p, i)).join('');
-  html += '<button class="new-script-card" onclick="openWriterNew()"><span class="new-script-symbol">ï¼‹</span><strong>New screenplay</strong><span>Start from a blank draft</span></button>';
+  html += '<button class="new-script-card" onclick="openWriterNew()"><span class="new-script-symbol">＋</span><strong>New screenplay</strong><span>Start from a blank draft</span></button>';
   grid.innerHTML = html;
 };
 
