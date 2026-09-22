@@ -996,7 +996,13 @@ function saveState() {
       const proj = getProject();
       if (proj) snapshotRevision(proj, 'Auto-save');
     }
-    localStorage.setItem('scriptwriter_v2', JSON.stringify(state));
+    try {
+      localStorage.setItem('scriptwriter_v2', JSON.stringify(state));
+    } catch(quota) {
+      // Storage quota exceeded -- retry keeping only named revisions (drop auto-saves)
+      const lean = {...state, projects: state.projects.map(p => ({...p, revisions: (p.revisions || []).filter(r => r.label !== 'Auto-save').slice(0, 5)}))};
+      localStorage.setItem('scriptwriter_v2', JSON.stringify(lean));
+    }
     showSaveIndicator('saved');
     // Cloud sync
     const proj = getProject();
