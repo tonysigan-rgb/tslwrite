@@ -256,6 +256,7 @@ body.typewriter-mode .editor-area{scroll-behavior:smooth}
 
 /* ── Misc ── */
 .hidden{display:none!important}
+[hidden]{display:none!important}
 .view-container{flex:1;display:flex;overflow:hidden;position:relative}
 .empty-state{text-align:center;padding:48px 24px;color:var(--text-muted)}
 .empty-state-icon{font-size:48px;margin-bottom:12px}
@@ -422,6 +423,8 @@ body:not(.focus-mode) .focus-exit{display:none}
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="collaboration.js"></script>
+<script src="writer-collaboration.js"></script>
 <style>
 /* Keep the app hidden until Firebase confirms that this visitor is signed in. */
 html.auth-pending body { visibility: hidden; }
@@ -457,7 +460,7 @@ window.tslWriteFirebaseConfig = {
     firebase.auth().onAuthStateChanged(
       user => {
         if (!user) return window.redirectToSignIn();
-        document.documentElement.classList.remove('auth-pending');
+        // The writer reveals the page after loading this account's projects.
       },
       error => {
         console.warn('Firebase authentication check failed:', error);
@@ -550,6 +553,11 @@ window.tslWriteFirebaseConfig = {
 </div>
 
 <!-- ══ MAIN ══ -->
+<div id="collaboration-banner" hidden role="status" style="padding:10px 16px;background:#263f4f;color:white;font-size:13px;flex-shrink:0">
+  <span id="collaboration-message"></span>
+  <button id="collaboration-download" class="tbtn" style="display:inline-flex" onclick="exportTXT()" hidden>Download local draft</button>
+  <button id="collaboration-reload" class="tbtn" style="display:inline-flex" onclick="reloadSharedProject()" hidden>Load latest</button>
+</div>
 <div class="main">
 
   <!-- ── Left Sidebar ── -->
@@ -800,9 +808,21 @@ function initFirebase() {
 
     _fbAuth.onAuthStateChanged(user => {
       _currentUser = user;
-      if (!user) return window.redirectToSignIn();
+      if (!user) {
+        writerAuthSession++;
+        writerReady = false;
+        stopWriterSubscriptions();
+        clearTimeout(saveTimer);
+        state.projects = [];
+        state.currentProjectId = null;
+        state.currentOwnerId = null;
+        document.querySelectorAll('.script-page, .cover-page').forEach(el => el.remove());
+        renderAll();
+        document.documentElement.classList.add('auth-pending');
+        return window.redirectToSignIn();
+      }
       updateUserBar(user);
-      loadProjectsFromFirestore();
+      initializeWriterForUser(user);
     });
   } catch(e) {
     console.warn('Firebase init failed:', e);
@@ -847,59 +867,58 @@ function setCloudStatus(status) {
 }
 
 async function saveProjectToFirestore(proj) {
-  if (!_fbDb || !_currentUser || !proj) return;
-  try {
-    setCloudStatus('syncing');
-    const docRef = _fbDb
-      .collection('users').doc(_currentUser.uid)
-      .collection('projects').doc(proj.id);
-    // Store everything except revisions (keep those local — they can be huge)
-    const { revisions, ...projData } = proj;
-    await docRef.set({ ...projData, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    setCloudStatus('synced');
-  } catch(e) {
-    console.warn('Firestore save failed:', e);
-    setCloudStatus('error');
-  }
+  return saveCollaborativeProject(proj);
 }
 
 async function loadProjectsFromFirestore() {
   if (!_fbDb || !_currentUser) return;
+  const userId = _currentUser.uid;
+  const session = writerAuthSession;
   try {
     setCloudStatus('syncing');
     const snap = await _fbDb
-      .collection('users').doc(_currentUser.uid)
+      .collection('users').doc(userId)
       .collection('projects').get();
-
-    if (snap.empty) {
-      // First login — push local projects to cloud
-      state.projects.forEach(p => saveProjectToFirestore(p));
-      setCloudStatus('synced');
+    if (session !== writerAuthSession) return;
+    if (snap.metadata?.fromCache) {
+      // A cache-only empty query cannot prove that a saved cloud project was deleted.
+      renderAll();
+      storeWriterCache();
+      setCloudStatus('error');
       return;
     }
-
     const cloudProjects = snap.docs.map(d => ({ ...d.data(), id: d.id }));
-
-    // Merge: cloud wins if updated more recently
     cloudProjects.forEach(cp => {
-      const localIdx = state.projects.findIndex(p => p.id === cp.id);
-      if (localIdx === -1) {
-        // Cloud project doesn't exist locally — add it
-        state.projects.push({ ...cp, revisions: [] });
-      } else {
-        const local = state.projects[localIdx];
-        const cloudTime = cp.updatedAt?.toMillis?.() || 0;
-        const localTime = local.updated ? new Date(local.updated).getTime() : 0;
-        if (cloudTime > localTime) {
-          state.projects[localIdx] = { ...cp, revisions: local.revisions || [] };
-        }
+      const index = state.projects.findIndex(p => p.id === cp.id && !p._sharedOwner);
+      const local = state.projects[index];
+      if (local?._dirty) {
+        local._cloudKnown = true;
+        local._baseline = writerSignature(cp);
+        if ((local.revision || 0) !== (cp.revision || 0)) local._conflict = true;
+        local.collaborationEnabled = cp.collaborationEnabled || false;
+        if (cp.collaborationGeneration) local.collaborationGeneration = cp.collaborationGeneration;
+        return;
       }
+      const project = { ...cp, revisions: local?.revisions || [], _cloudKnown: true, _dirty: false };
+      project._baseline = writerSignature(project);
+      if (index < 0) state.projects.push(project);
+      else state.projects[index] = project;
     });
-
-    saveState();
+    const cloudIds = new Set(cloudProjects.map(project => project.id));
+    state.projects = state.projects.filter(project => {
+      if (cloudIds.has(project.id) || project.revision === undefined) return true;
+      if (project._dirty) { project._cloudKnown = true; project._conflict = true; return true; }
+      return false;
+    });
     applyDashboardLaunchRequest();
     renderAll();
+    storeWriterCache();
     setCloudStatus('synced');
+    if (getProject()?._conflict) setWriterConflict(getProject());
+    // Only this signed-in account's new or unsynced drafts can be uploaded.
+    for (const project of state.projects.filter(p => p._dirty && !p._conflict && !p._sharedOwner)) {
+      await saveProjectToFirestore(project);
+    }
   } catch(e) {
     console.warn('Firestore load failed:', e);
     setCloudStatus('error');
@@ -917,12 +936,34 @@ async function deleteProjectFromFirestore(projectId) {
   }
 }
 
-function signOutUser() {
+async function signOutUser() {
   if (!_fbAuth) return;
-  if (!confirm('Sign out? Your scripts are saved locally and in the cloud.')) return;
-  _fbAuth.signOut().then(() => {
+  if (!confirm('Sign out of tslWrite?')) return;
+  clearTimeout(saveTimer);
+  const project = getProject();
+  if (canEditCurrentProject()) {
+    syncDOMToData();
+    if (!project._baseline || writerSignature(project) !== project._baseline) project._dirty = true;
+    try { storeWriterCache(); } catch {
+      alert('Your local draft could not be saved. Download it before signing out.');
+      return;
+    }
+    if (project._sharedOwner && (project._dirty || project._saving || project._conflict)) {
+      await saveProjectToFirestore(project);
+      if (project._dirty || project._conflict) {
+        showCollaborationBanner('Your shared draft is still unsaved. Download it and load the latest version before signing out.', true);
+        return;
+      }
+    }
+  }
+  if (project?._sharedOwner && (project._dirty || project._conflict)) {
+    showCollaborationBanner('Download your unsaved shared draft and load the latest version before signing out.', true);
+    return;
+  }
+  try {
+    await _fbAuth.signOut();
     window.location.href = 'index.html';
-  });
+  } catch { showFlash('Could not sign out. Please try again.'); }
 }
 </script>
 
@@ -980,7 +1021,7 @@ let focusedBlock = null;
 let saveCount = 0;
 
 function getProject() {
-  return state.projects.find(p => p.id === state.currentProjectId) || null;
+  return state.projects.find(p => p.id === state.currentProjectId && (p._sharedOwner || null) === (state.currentOwnerId || null)) || null;
 }
 
 // ═══════════════════════════════════════════
@@ -989,21 +1030,18 @@ function getProject() {
 
 function saveState() {
   try {
+    if (!canEditCurrentProject()) { storeWriterCache(); return; }
     if (state.currentProjectId) syncDOMToData();
+    const changedProject = getProject();
+    if (changedProject && (!changedProject._baseline || writerSignature(changedProject) !== changedProject._baseline)) changedProject._dirty = true;
     // Auto-snapshot every 5 saves
     saveCount++;
     if (saveCount % 5 === 0) {
       const proj = getProject();
       if (proj) snapshotRevision(proj, 'Auto-save');
     }
-    try {
-      localStorage.setItem('scriptwriter_v2', JSON.stringify(state));
-    } catch(quota) {
-      // Storage quota exceeded -- retry keeping only named revisions (drop auto-saves)
-      const lean = {...state, projects: state.projects.map(p => ({...p, revisions: (p.revisions || []).filter(r => r.label !== 'Auto-save').slice(0, 5)}))};
-      localStorage.setItem('scriptwriter_v2', JSON.stringify(lean));
-    }
-    showSaveIndicator('saved');
+    storeWriterCache();
+    showSaveIndicator(getProject()?._conflict ? 'error' : getProject()?._sharedOwner ? 'saving' : 'saved');
     // Cloud sync
     const proj = getProject();
     if (proj) saveProjectToFirestore(proj);
@@ -1025,6 +1063,8 @@ function applyDashboardLaunchRequest() {
 }
 
 function scheduleSave() {
+  if (!canEditCurrentProject()) return;
+  getProject()._dirty = true;
   showSaveIndicator('saving');
   clearTimeout(saveTimer);
   saveTimer = setTimeout(saveState, 1200);
@@ -1042,6 +1082,7 @@ function showSaveIndicator(status) {
 
 function createProject(title, format) {
   const proj = {
+    _dirty: true,
     id: uid(),
     title: title || 'Untitled Script',
     format: format || 'screenplay',
@@ -1071,15 +1112,29 @@ function createProject(title, format) {
 
 function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
 
-function openProject(id) {
+async function openProject(id) {
   // Sync current before switching
   if (state.currentProjectId) syncDOMToData();
+  const outgoing = getProject();
+  if (outgoing?._sharedOwner && outgoing._sharedRole === 'editor' &&
+      (outgoing._dirty || outgoing._saving || outgoing._conflict || writerSignature(outgoing) !== outgoing._baseline)) {
+    outgoing._dirty = true;
+    storeWriterCache();
+    await saveProjectToFirestore(outgoing);
+    if (outgoing._dirty || outgoing._conflict || outgoing._accessDenied) {
+      showFlash('Your new script is in your library. Resolve the shared draft before switching.');
+      return false;
+    }
+  }
   state.currentProjectId = id;
+  state.currentOwnerId = null;
   const proj = getProject();
   if (!proj) return;
   proj.updated = Date.now();
   renderAll();
   saveState();
+  watchWriterProject(proj);
+  return true;
 }
 
 function deleteProject(id, e) {
@@ -1132,7 +1187,7 @@ document.addEventListener('keydown', event => {
 
 function syncDOMToData() {
   const proj = getProject();
-  if (!proj) return;
+  if (!writerReady || !proj || !canEditCurrentProject()) return;
   const blocks = [];
   document.querySelectorAll('.script-block').forEach(el => {
     blocks.push({
@@ -1156,6 +1211,7 @@ function renderAll() {
   renderNotes();
   renderStatsView();
   updateStatsPanel();
+  applyWriterAccess();
 }
 
 function renderScript() {
@@ -1231,6 +1287,7 @@ function createBlockEl(block) {
 // ═══════════════════════════════════════════
 
 function handleKeyDown(e) {
+  if (!canEditCurrentProject()) return;
   const block = e.target;
 
   // Ctrl+Z - undo (restore previous revision)
@@ -1364,6 +1421,7 @@ function handleKeyDown(e) {
 }
 
 function handleInput(e) {
+  if (!canEditCurrentProject()) return;
   const block = e.target;
 
   // Auto-uppercase scene headings and transitions
@@ -1768,6 +1826,7 @@ function setView(view) {
   if (view === 'stats') renderStatsView();
   if (view === 'revisions') renderRevisions();
   if (view === 'diff') populateDiffSelects();
+  applyWriterAccess();
 }
 
 // ═══════════════════════════════════════════
@@ -2217,7 +2276,7 @@ async function handleImport(input) {
     } else {
       setImportStatus('Reading file…', file.name);
       const text = await file.text();
-      parseFountain(text, file.name.replace(/\.[^.]+$/, ''));
+      await parseFountain(text, file.name.replace(/\.[^.]+$/, ''));
       hideImportOverlay();
     }
   } catch(e) {
@@ -2236,7 +2295,7 @@ async function importSBX(file) {
   // Parse before creating a project so an invalid file leaves existing work intact.
   const proj = createProject(file.name.replace(/\.sbx$/i, ''), 'screenplay');
   proj.blocks = blocks;
-  openProject(proj.id);
+  await openProject(proj.id);
   hideImportOverlay();
 }
 
@@ -2344,7 +2403,7 @@ async function importPDF(file) {
   const proj = createProject(title, 'screenplay');
   proj.blocks = blocks.length ? blocks : proj.blocks;
   hideImportOverlay();
-  openProject(proj.id);
+  await openProject(proj.id);
 }
 
 function pdfLinesToBlocks(lines) {
@@ -2497,10 +2556,10 @@ async function importCeltx(file) {
   const proj = createProject(title, 'screenplay');
   proj.blocks = blocks;
   hideImportOverlay();
-  openProject(proj.id);
+  await openProject(proj.id);
 }
 
-function importCeltxFromRDF(rdfText, title) {
+async function importCeltxFromRDF(rdfText, title) {
   // Very basic RDF fallback: extract all text between tags
   const textMatches = rdfText.match(/<[^>]+class="([^"]+)"[^>]*>([^<]+)<\//g) || [];
   const CELTX_MAP = {sceneheading:'scene-heading',action:'action',character:'character',parenthetical:'parenthetical',dialog:'dialogue',transition:'transition'};
@@ -2515,14 +2574,14 @@ function importCeltxFromRDF(rdfText, title) {
   const proj = createProject(title || 'Celtx Import', 'screenplay');
   proj.blocks = blocks;
   hideImportOverlay();
-  openProject(proj.id);
+  await openProject(proj.id);
 }
 
 // ═══════════════════════════════════════════
 //  IMPORT — FOUNTAIN / PLAIN TEXT
 // ═══════════════════════════════════════════
 
-function parseFountain(text, title) {
+async function parseFountain(text, title) {
   const lines = text.split('\n');
   const blocks = [];
   let i = 0;
@@ -2566,7 +2625,7 @@ function parseFountain(text, title) {
 
   const proj = createProject(title || 'Imported Script', 'screenplay');
   proj.blocks = blocks.length ? blocks : proj.blocks;
-  openProject(proj.id);
+  await openProject(proj.id);
 }
 
 // ═══════════════════════════════════════════
@@ -3447,28 +3506,8 @@ document.getElementById('btn-toggle-rp').onclick = () => {
 // ═══════════════════════════════════════════
 
 function init() {
-  loadState();
-
-  // Apply theme
-  if (state.theme === 'light') {
-    document.documentElement.dataset.theme = 'light';
-    document.getElementById('btn-theme').textContent = '☀️';
-  }
-
-  state.projects.forEach(p => {
-    if (!p.notes) p.notes = [];
-    if (!p.revisions) p.revisions = [];
-    if (!p.cover) p.cover = {show:false,author:'',contact:'',phone:'',email:'',wga:'',copyright:new Date().getFullYear().toString(),draftDate:'',logline:''};
-  });
-
-  if (new URLSearchParams(window.location.search).get('new') === '1') {
-    const project = createProject('Untitled Script', 'screenplay');
-    state.currentProjectId = project.id;
-  }
-  applyDashboardLaunchRequest();
-
-  renderAll();
-  setView(state.currentView || 'editor');
+  // Account-specific data is loaded only after authentication is known.
+  guardSharedWriterActions();
   initSessionTimer();
   initAutocomplete();
   updateSceneNumbers();

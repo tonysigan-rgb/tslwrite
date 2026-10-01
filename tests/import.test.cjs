@@ -13,11 +13,11 @@ let origin;
 before(async () => {
   server = http.createServer(async (request, response) => {
     const pathname = new URL(request.url, 'http://localhost').pathname;
-    if (!['/scriptwriter.html', '/index.html', '/dashboard.html'].includes(pathname)) {
+    if (!['/scriptwriter.html', '/index.html', '/dashboard.html', '/collaboration.js', '/writer-collaboration.js'].includes(pathname)) {
       response.writeHead(404).end();
       return;
     }
-    response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    response.writeHead(200, { 'Content-Type': pathname.endsWith('.js') ? 'application/javascript' : 'text/html; charset=utf-8' });
     response.end(await fs.readFile(path.join(root, pathname)));
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -39,22 +39,48 @@ async function openEditor(t) {
     return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
   });
   await context.addInitScript(() => {
-    const user = { uid: 'test-only-user', displayName: 'Import Test', email: 'test@example.invalid' };
+    const user = { uid: 'test-only-user', displayName: 'Import Test', email: 'test@example.invalid', emailVerified: true, getIdToken: async () => 'test-token' };
+    const records = new Map(Object.entries(JSON.parse(sessionStorage.getItem('import-test-cloud') || '{}')));
+    const persist = () => sessionStorage.setItem('import-test-cloud', JSON.stringify(Object.fromEntries(records)));
+    const clone = value => value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+    const snapshot = ref => ({ exists: records.has(ref.path), id: ref.id, ref, data: () => clone(records.get(ref.path)) });
+    class Reference {
+      constructor(path) { this.path = path; this.id = path.split('/').at(-1); }
+      collection(name) { return new Collection(`${this.path}/${name}`); }
+      doc(name) { return new Reference(`${this.path}/${name}`); }
+      async get() { return snapshot(this); }
+      async set(data, options) { records.set(this.path, options?.merge ? { ...records.get(this.path), ...clone(data) } : clone(data)); persist(); }
+      async delete() { records.delete(this.path); persist(); }
+      onSnapshot() { return () => {}; }
+    }
+    class Collection extends Reference {
+      async get() {
+        const docs = [...records.keys()].filter(key => key.startsWith(this.path + '/') && key.split('/').length === this.path.split('/').length + 1).map(key => snapshot(new Reference(key)));
+        return { empty: docs.length === 0, docs };
+      }
+    }
     const db = {
-      collection() { return this; },
-      doc() { return this; },
-      async get() { return { empty: false, docs: [] }; },
-      async set() {},
-      async delete() {},
+      collection(name) { return new Collection(name); },
+      async runTransaction(callback) {
+        const pending = [];
+        const result = await callback({
+          get: async ref => snapshot(ref),
+          set(ref, data, options) { pending.push({ ref, data, options }); },
+          update(ref, data) { pending.push({ ref, data, options: { merge: true } }); },
+        });
+        for (const { ref, data, options } of pending) await ref.set(data, options);
+        return result;
+      },
     };
     const firestore = () => db;
     firestore.FieldValue = { serverTimestamp: () => 0 };
     window.firebase = {
       apps: [],
       initializeApp() { this.apps.push({}); },
-      auth: () => ({ onAuthStateChanged(callback) { setTimeout(() => callback(user), 0); } }),
+      auth: () => ({ currentUser: user, onAuthStateChanged(callback) { setTimeout(() => callback(user), 0); } }),
       firestore,
     };
+    localStorage.setItem('tslwrite_cache_uid', user.uid);
   });
   const page = await context.newPage();
   await page.goto(`${origin}/scriptwriter.html?new=1`);
@@ -112,7 +138,7 @@ test('StudioBinder import preserves typed structure, Unicode, line breaks, exist
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('scriptwriter_v2')));
   assert.equal(stored.projects.find(project => project.id === originalId).blocks[1].text, 'An unsaved original action.');
   assert.deepEqual(stored.projects.find(project => project.id === importedId).blocks.map(({ type, text }) => ({ type, text })), expected);
-
+  await page.waitForFunction(() => writerSaveQueues.size === 0);
   await page.goto(`${origin}/scriptwriter.html?project=${encodeURIComponent(importedId)}`);
   await page.locator('#script-page .script-block').first().waitFor();
   assert.deepEqual(await renderedBlocks(page), expected);

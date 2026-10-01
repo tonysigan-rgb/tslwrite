@@ -1,0 +1,20 @@
+{
+  "name": "tslwrite-collaboration-functions",
+  "private": true,
+  "main": "index.js",
+  "engines": { "node": "22" },
+  "scripts": {
+    "test": "node --test test/unit.test.js",
+    "test:emulator": "node test/run-emulator.js"
+  },
+  "dependencies": {
+    "firebase-admin": "14.5.0",
+    "firebase-functions": "7.4.0",
+    "nodemailer": "10.0.13"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "5.0.2",
+    "firebase": "12.19.0",
+    "firebase-tools": "15.32.1"
+  }
+}
