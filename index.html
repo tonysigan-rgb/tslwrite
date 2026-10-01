@@ -146,6 +146,7 @@ body {
 <div class="card">
   <div class="logo">tsl<span>Write</span></div>
   <div class="tagline">Professional screenplay writing, free.</div>
+  <p id="invite-notice" style="display:none;margin-bottom:20px;font-size:13px;line-height:1.5;color:#c7cfdf">You have been invited to a screenplay. Sign in with the invited email address, or create an account to continue.</p>
 
   <div class="tabs">
     <div class="tab active" id="tab-login" onclick="switchTab('login')">Sign In</div>
@@ -208,6 +209,7 @@ body {
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="collaboration.js"></script>
 
 <script>
 // ══════════════════════════════════════════════════════
@@ -225,14 +227,17 @@ const firebaseConfig = {
 };
 // ══════════════════════════════════════════════════════
 
-let auth;
+const authParams = new URLSearchParams(window.location.search);
+const pendingInvite = TSLInvite.validInvite(authParams.get('invite'));
+let auth, authActionInProgress = false;
+if (pendingInvite) document.getElementById('invite-notice').style.display = 'block';
 try {
   firebase.initializeApp(firebaseConfig);
   auth = firebase.auth();
 
   // If already signed in, go straight to the app
   auth.onAuthStateChanged(user => {
-    if (user) goToApp();
+    if (user && !authActionInProgress) goToApp();
   });
 
   if (firebaseConfig.apiKey === 'YOUR_API_KEY') {
@@ -243,7 +248,7 @@ try {
 }
 
 function goToApp() {
-  window.location.href = 'dashboard.html';
+  window.location.href = pendingInvite ? TSLInvite.invitationUrl(pendingInvite) : 'dashboard.html';
 }
 
 function switchTab(tab) {
@@ -262,7 +267,8 @@ function showError(msg) {
 
 if (new URLSearchParams(window.location.search).get('reason') === 'signin-required') {
   showError('Please sign in or create an account to access the scriptwriter.');
-  window.history.replaceState({}, document.title, window.location.pathname);
+  authParams.delete('reason');
+  window.history.replaceState({}, document.title, window.location.pathname + (authParams.size ? '?' + authParams.toString() : ''));
 }
 
 function showSuccess(msg) {
@@ -311,11 +317,23 @@ async function handleRegister() {
   if (!email || !password) { showError('Please fill in all fields.'); return; }
   if (password.length < 6) { showError('Password must be at least 6 characters.'); return; }
   setLoading('btn-register', true);
+  authActionInProgress = true;
   try {
     const cred = await auth.createUserWithEmailAndPassword(email, password);
     if (name) await cred.user.updateProfile({displayName: name});
+    if (!cred.user.emailVerified) {
+      try {
+        const returnUrl = new URL(pendingInvite ? TSLInvite.invitationUrl(pendingInvite) : 'dashboard.html', window.location.href).href;
+        await cred.user.sendEmailVerification({url: returnUrl});
+        if (pendingInvite) sessionStorage.setItem('tslwrite_verification_sent', pendingInvite);
+      } catch (verificationError) {
+        // The invitation screen offers a retry without losing the newly created account.
+        console.warn('Could not send verification email:', verificationError.code);
+      }
+    }
     goToApp();
   } catch(e) {
+    authActionInProgress = false;
     setLoading('btn-register', false);
     showError(friendlyError(e.code));
   }
@@ -347,6 +365,7 @@ function friendlyError(code) {
   const map = {
     'auth/user-not-found':      'No account found with this email.',
     'auth/wrong-password':      'Incorrect password. Try again.',
+    'auth/invalid-credential':  'The email or password is incorrect. If you are new to tslWrite, choose Register to create an account.',
     'auth/email-already-in-use':'This email is already registered.',
     'auth/invalid-email':       'Please enter a valid email address.',
     'auth/weak-password':       'Password must be at least 6 characters.',
@@ -356,6 +375,8 @@ function friendlyError(code) {
   };
   return map[code] || 'Something went wrong. Please try again.';
 }
+
+if (authParams.get('mode') === 'register') switchTab('register');
 
 function showSetupHelp() {
   alert(

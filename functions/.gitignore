@@ -1,0 +1,6 @@
+.env
+.env.*
+!.env.example
+.secret.local
+*-debug.log
+node_modules/

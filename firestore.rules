@@ -1,0 +1,65 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function owner(ownerUid) { return signedIn() && request.auth.uid == ownerUid; }
+    function verified() {
+      return signedIn() && request.auth.token.get('email_verified', false) == true
+        && request.auth.token.get('email', '') is string;
+    }
+    function memberPath(ownerUid, projectId) {
+      return /databases/$(database)/documents/users/$(ownerUid)/projects/$(projectId)/members/$(request.auth.uid);
+    }
+    function memberHasRole(ownerUid, projectId, roles) {
+      return verified()
+        && resource.data.get('collaborationEnabled', false) == true
+        && exists(memberPath(ownerUid, projectId))
+        && get(memberPath(ownerUid, projectId)).data.generation == resource.data.collaborationGeneration
+        && get(memberPath(ownerUid, projectId)).data.email == request.auth.token.email.lower()
+        && get(memberPath(ownerUid, projectId)).data.role in roles;
+    }
+    function collaborationMetadataUnchanged() {
+      return request.resource.data.get('collaborationEnabled', false) == resource.data.get('collaborationEnabled', false)
+        && request.resource.data.get('collaborationGeneration', '') == resource.data.get('collaborationGeneration', '');
+    }
+    function validRevision() {
+      return request.resource.data.revision is int
+        && request.resource.data.revision == resource.data.get('revision', 0) + 1
+        && request.resource.data.updatedAt == request.time;
+    }
+    match /users/{ownerUid}/projects/{projectId} {
+      allow list: if owner(ownerUid);
+      allow get: if owner(ownerUid) || memberHasRole(ownerUid, projectId, ['editor', 'viewer']);
+      allow create: if owner(ownerUid)
+        && !request.resource.data.keys().hasAny(['collaborationEnabled', 'collaborationGeneration']);
+      allow delete: if owner(ownerUid);
+      allow update: if collaborationMetadataUnchanged() && (
+        (owner(ownerUid) && (!resource.data.get('collaborationEnabled', false) || validRevision()))
+        || (memberHasRole(ownerUid, projectId, ['editor']) && validRevision()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'title', 'format', 'blocks', 'cover', 'notes', 'sceneTags', 'updated', 'updatedAt', 'revision'
+          ])
+          && request.resource.data.title is string
+          && request.resource.data.title.size() <= 200
+          && request.resource.data.blocks is list
+          && request.resource.data.format is string)
+      );
+      match /members/{uid} {
+        allow get: if owner(ownerUid) || (signedIn() && request.auth.uid == uid);
+        allow list: if owner(ownerUid);
+        allow write: if false;
+      }
+    }
+    match /users/{uid}/folders/{folderId} {
+      allow read, write: if owner(uid);
+    }
+    match /users/{uid}/sharedProjects/{shareId} {
+      allow read: if owner(uid);
+      allow write: if false;
+    }
+    // Invitation and mail state are accessible only through authenticated callables.
+    match /projectInvitations/{id} { allow read, write: if false; }
+    match /invitationRateLimits/{id} { allow read, write: if false; }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

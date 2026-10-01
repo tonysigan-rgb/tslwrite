@@ -1,12 +1,16 @@
-# Import integration tests
+# Browser integration tests
 
 Run `npm ci`, then `npm test`. Tests use the installed Microsoft Edge on Windows.
 On other platforms, install the test browser with `npx playwright install chromium`.
 Set `PLAYWRIGHT_CHANNEL` to select another installed browser channel.
 
-The tests serve the local editor, exercise its import dialog and file input, and
-verify rendered content and local persistence. Firebase is replaced by an in-memory
-stub, and all external HTTP requests are blocked. No account or cloud data is used.
+The tests exercise invitation signup/signin, verification, sharing, permissions,
+conflict recovery, account caches, offline drafts, and script import through the UI.
+Firebase is replaced by an in-memory stub, and all external HTTP requests are
+blocked. No real accounts, cloud data, or email recipients are used.
+
+Backend unit tests and tests against actual Firestore emulator rules are documented
+in [collaboration setup](../docs/collaboration-setup.md).
 
 The SBX fixtures are reconstructed from StudioBinder's official
 [application bundle](https://apps3.studiobinder.com/dist/production/2.21.1021/js/studiobinder-app-combined.js?v=1786909189),

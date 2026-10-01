@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>tslWrite — Project invitation</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f4f6f7;color:#263541;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:24px}.card{background:#fff;border:1px solid #dfe5e8;border-radius:16px;padding:34px;max-width:500px;width:100%;box-shadow:0 14px 38px #16273512}.brand{font:700 29px Georgia,serif;color:#162735;text-decoration:none}.brand span{color:#88ae00}h1{font-size:25px;margin:28px 0 12px;word-break:break-word}p{line-height:1.6;color:#60717c;font-size:14px}button,.button{font:700 14px inherit;background:#a9d300;border:0;border-radius:8px;padding:12px 16px;cursor:pointer;color:#243300;text-decoration:none;display:inline-block}button:disabled{opacity:.55;cursor:wait}.secondary{background:#edf1f3;color:#344b58}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.status{white-space:pre-line}#account{font-size:12px;overflow-wrap:anywhere}#verify-actions[hidden],#accept-button[hidden]{display:none}.error{color:#b83c30}a{color:#526d00}
+</style></head><body><main class="card"><a class="brand" href="dashboard.html">tsl<span>Write</span></a><h1 id="title">Project invitation</h1><p id="status" class="status" role="status">Checking your invitation…</p><p id="details"></p><p id="account"></p><div id="verify-actions" hidden><div class="actions"><button id="verify-send" onclick="sendVerification()">Send verification email</button><button class="secondary" id="verify-refresh" onclick="refreshVerification()">I verified my email</button></div></div><div class="actions"><button id="accept-button" onclick="acceptInvitation()" hidden>Accept invitation</button><button class="secondary" id="switch-account" onclick="switchAccount()">Use another account</button><a class="button secondary" href="dashboard.html">Dashboard</a></div></main>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-functions-compat.js"></script><script src="collaboration.js"></script>
+<script>
+const firebaseConfig={apiKey:"AIzaSyAQKZ7_ocuATRPWf6ljC8U4K0rCQKo3Um0",authDomain:"tslwrite.firebaseapp.com",projectId:"tslwrite",storageBucket:"tslwrite.firebasestorage.app",messagingSenderId:"395801581699",appId:"1:395801581699:web:ef82500d81fe379cffa3b6"};
+const invitationId = TSLInvite.validInvite(new URLSearchParams(location.search).get('invite'));
+let auth, invitation, user, loading = false;
+const $ = id => document.getElementById(id);
+function status(message, error = false) { $('status').textContent = message; $('status').classList.toggle('error', error); }
+async function loadInvitation() {
+  $('accept-button').hidden = true;
+  $('verify-actions').hidden = true;
+  if (!invitationId) { status('This invitation link is incomplete. Ask the project owner for a new invitation.', true); return; }
+  if (!user) { location.replace(TSLInvite.authUrl(invitationId)); return; }
+  $('account').textContent = 'Signed in as ' + user.email;
+  if (!user.emailVerified) {
+    let sent = false;
+    try { sent = sessionStorage.getItem('tslwrite_verification_sent') === invitationId; } catch {}
+    status(sent ? 'A verification email was sent. Open it, then return here and choose “I verified my email”.' : 'Verify your email address before accepting the invitation. Use the same email address that received the invitation.');
+    $('verify-actions').hidden = false;
+    return;
+  }
+  status('Checking your invitation…');
+  try {
+    invitation = await TSLInvite.call('getProjectInvitation', {invitationId});
+    $('title').textContent = invitation.title || 'Project invitation';
+    $('details').textContent = (invitation.ownerName || 'The project owner') + ' invited you as ' + (invitation.role === 'editor' ? 'an editor. You can write and revise the script.' : 'a reader. You can view the script.');
+    if (invitation.status === 'revoked' || invitation.status === 'expired') { status('This invitation is no longer active. Ask the owner for a new invitation.', true); return; }
+    status(invitation.status === 'accepted' ? 'You have already accepted this invitation.' : 'Accept to add this screenplay to your shared projects.');
+    $('accept-button').textContent = invitation.status === 'accepted' ? 'Open shared script' : 'Accept invitation';
+    $('accept-button').hidden = false;
+  } catch (error) { status(TSLInvite.message(error), true); }
+}
+async function sendVerification() {
+  $('verify-send').disabled = true;
+  try { await user.sendEmailVerification({url: location.href}); sessionStorage.setItem('tslwrite_verification_sent', invitationId); status('Verification email sent. Open it, then return here and choose “I verified my email”.'); }
+  catch (error) { status(error.code === 'auth/too-many-requests' ? 'Please wait before requesting another verification email.' : 'Verification email could not be sent. Please try again.', true); }
+  finally { $('verify-send').disabled = false; }
+}
+async function refreshVerification() {
+  $('verify-refresh').disabled = true;
+  try { await user.reload(); user = auth.currentUser; await user.getIdToken(true); await loadInvitation(); }
+  catch { status('Could not refresh your account. Check your connection and try again.', true); }
+  finally { $('verify-refresh').disabled = false; }
+}
+async function acceptInvitation() {
+  if (loading) return;
+  loading = true; $('accept-button').disabled = true;
+  try { const result = await TSLInvite.call('acceptProjectInvitation', {invitationId}); location.href = 'scriptwriter.html?project=' + encodeURIComponent(result.projectId) + '&owner=' + encodeURIComponent(result.ownerUid); }
+  catch (error) { status(TSLInvite.message(error), true); loading = false; $('accept-button').disabled = false; }
+}
+async function switchAccount() { if (auth) await auth.signOut(); location.replace(TSLInvite.authUrl(invitationId)); }
+try { firebase.initializeApp(firebaseConfig); auth = firebase.auth(); auth.onAuthStateChanged(account => { user = account; loadInvitation(); }); }
+catch { status('Could not connect to sign-in. Refresh this page to try again.', true); }
+</script></body></html>

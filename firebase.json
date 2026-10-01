@@ -1,0 +1,9 @@
+{
+  "functions": [{ "source": "functions", "codebase": "collaboration", "runtime": "nodejs22", "ignore": ["node_modules", ".git", "*-debug.log", ".env*", ".secret.local", "test"] }],
+  "firestore": { "rules": "firestore.rules", "indexes": "firestore.indexes.json" },
+  "emulators": {
+    "firestore": { "host": "127.0.0.1", "port": 8080 },
+    "ui": { "enabled": false },
+    "singleProjectMode": true
+  }
+}
