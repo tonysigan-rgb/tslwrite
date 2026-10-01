@@ -775,7 +775,7 @@ window.tslWriteFirebaseConfig = {
 <button class="focus-exit" id="focus-exit" onclick="toggleFocusMode()">✕ Exit Focus Mode (F11)</button>
 
 <!-- Hidden file input for import -->
-<input type="file" id="file-input" class="hidden" accept=".txt,.fountain,.fdx,.pdf,.celtx" onchange="handleImport(this)">
+<input type="file" id="file-input" class="hidden" accept=".txt,.fountain,.fdx,.pdf,.celtx,.sbx" onchange="handleImport(this)">
 
 <!-- Import overlay -->
 <div class="import-overlay hidden" id="import-overlay">
@@ -2147,7 +2147,7 @@ function openImportDialog() {
   showModal('Import Script',
     `<div style="display:flex;flex-direction:column;gap:10px">
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Choose a file to import into a new script project.</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <button class="mbtn mbtn-cancel" style="text-align:center;padding:14px 8px" onclick="triggerFileInput('.txt,.fountain,.fdx')">
           <div style="font-size:22px;margin-bottom:6px">📝</div>
           <div style="font-size:12px;font-weight:700">Fountain / TXT</div>
@@ -2162,6 +2162,11 @@ function openImportDialog() {
           <div style="font-size:22px;margin-bottom:6px">🎬</div>
           <div style="font-size:12px;font-weight:700">Celtx File</div>
           <div style="font-size:10px;color:var(--text-muted);margin-top:3px">.celtx format</div>
+        </button>
+        <button class="mbtn mbtn-cancel" style="text-align:center;padding:14px 8px" onclick="triggerFileInput('.sbx')">
+          <div style="font-size:22px;margin-bottom:6px">🎞️</div>
+          <div style="font-size:12px;font-weight:700">StudioBinder</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:3px">.sbx script</div>
         </button>
       </div>
     </div>`,
@@ -2207,6 +2212,8 @@ async function handleImport(input) {
       await importPDF(file);
     } else if (ext === 'celtx') {
       await importCeltx(file);
+    } else if (ext === 'sbx') {
+      await importSBX(file);
     } else {
       setImportStatus('Reading file…', file.name);
       const text = await file.text();
@@ -2217,6 +2224,70 @@ async function handleImport(input) {
     hideImportOverlay();
     alert('Import failed: ' + e.message);
   }
+}
+
+// ═══════════════════════════════════════════
+//  IMPORT — STUDIOBINDER (.sbx)
+// ═══════════════════════════════════════════
+
+async function importSBX(file) {
+  setImportStatus('Reading StudioBinder script…', file.name);
+  const blocks = parseSBX(await file.text());
+  // Parse before creating a project so an invalid file leaves existing work intact.
+  const proj = createProject(file.name.replace(/\.sbx$/i, ''), 'screenplay');
+  proj.blocks = blocks;
+  openProject(proj.id);
+  hideImportOverlay();
+}
+
+function parseSBX(html) {
+  // StudioBinder exports HTML paragraphs with numeric divtype classes.
+  // A template keeps imported HTML inert; only extracted text reaches the editor.
+  const template = document.createElement('template');
+  template.innerHTML = html;
+  template.content.querySelectorAll('script, style, template, noscript, iframe, object, embed, svg, math').forEach(el => el.remove());
+
+  const SBX_TYPES = {
+    0: 'scene-heading', 1: 'general', 2: 'action', 3: 'character',
+    4: 'parenthetical', 5: 'dialogue', 6: 'transition', 7: 'shot',
+    8: 'general', 9: 'act-marker', 10: 'general',
+  };
+  const paragraphType = el => {
+    if (el.nodeType !== 1 || el.tagName !== 'DIV') return null;
+    for (const cls of el.classList) {
+      const match = /^divtype(\d+)$/.exec(cls);
+      if (match) return Number(match[1]);
+    }
+    return null;
+  };
+  const readText = node => {
+    if (node.nodeType === 3) return node.textContent;
+    if (node.nodeType !== 1 || paragraphType(node) !== null) return '';
+    if (node.classList.contains('omitted')) return '';
+    if (node.tagName === 'BR') return '\n';
+    const text = Array.from(node.childNodes, readText).join('');
+    return ['DIV', 'P', 'LI'].includes(node.tagName) ? '\n' + text + '\n' : text;
+  };
+
+  const blocks = [];
+  for (const el of template.content.querySelectorAll('div[class]')) {
+    const code = paragraphType(el);
+    if (code === null || code === 11) continue; // The editor handles pagination.
+    let text = Array.from(el.childNodes, readText).join('')
+      .replace(/\r\n?/g, '\n').replace(/\u00a0/g, ' ').trim();
+    if (!text) continue;
+    const type = SBX_TYPES[code];
+    if (!type) throw new Error('Unsupported StudioBinder paragraph type: ' + code + '. Please export the script as Fountain or PDF instead.');
+    if (code === 0 && (el.getAttribute('data-omitted') === 'true' || el.querySelector('.omitted'))) {
+      text += ' (OMITTED)';
+    }
+    // Dual-dialogue paragraphs retain their types and follow file order.
+    blocks.push({id: uid(), type, text});
+  }
+  if (!blocks.length) {
+    throw new Error('No readable StudioBinder script found in this .sbx file. Please export it again from StudioBinder.');
+  }
+  return blocks;
 }
 
 // ═══════════════════════════════════════════
